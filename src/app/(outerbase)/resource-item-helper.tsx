@@ -27,6 +27,7 @@ import {
 } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import NewResourceButton from "./new-resource-button";
 import ResourceCardLoading from "./resource-card-loading";
 
@@ -105,6 +106,7 @@ export function ResourceItemList({
 }) {
   const [search, setSearch] = useState("");
   const [sorted, setSorted] = useState<SortedType>("name_asc");
+  const { t } = useTranslation();
 
   const sortedBases = useMemo(() => {
     return sortResources(bases, sorted);
@@ -153,17 +155,17 @@ export function ResourceItemList({
           value={search}
           onValueChange={setSearch}
           preText={<MagnifyingGlass className="mr-2" />}
-          placeholder="Search"
+          placeholder={t("common.search")}
         />
       </div>
 
       {boardMatchedCount > 0 && (
         <>
-          <h2 className="text-base font-bold">Boards</h2>
+          <h2 className="text-base font-bold">{t("nav.boards")}</h2>
           <div className="flex grid grid-cols-1 flex-wrap gap-4 min-[700px]:grid-cols-2 min-[900px]:grid-cols-3 min-[1200px]:grid-cols-4 min-[1500px]:grid-cols-5 min-[1800px]:grid-cols-6 min-[2100px]:grid-cols-7">
             <AnimatePresence initial={false}>
               {sortedBoards.map((resource: ResourceItemProps) => {
-                const status = `Last updated ${timeSince(resource.lastUsed)} ago`;
+                const status = `${t("local.lastUpdated")} ${timeSince(resource.lastUsed)}`;
 
                 return (
                   <motion.div
@@ -198,7 +200,7 @@ export function ResourceItemList({
                         }}
                       >
                         <Trash size={16} className="mr-2" />
-                        Remove board
+                        {t("local.removeBoard")}
                       </DropdownMenuItem>
                     </ResourceCard>
                   </motion.div>
@@ -210,7 +212,7 @@ export function ResourceItemList({
       )}
 
       {boardMatchedCount > 0 && baseMatchedCount > 0 && (
-        <h2 className="text-base font-bold">Bases</h2>
+        <h2 className="text-base font-bold">{t("nav.bases")}</h2>
       )}
 
       <div className="flex grid grid-cols-1 flex-wrap gap-4 min-[700px]:grid-cols-2 min-[900px]:grid-cols-3 min-[1200px]:grid-cols-4 min-[1500px]:grid-cols-5 min-[1800px]:grid-cols-6 min-[2100px]:grid-cols-7">
@@ -226,7 +228,7 @@ export function ResourceItemList({
         {bases.length > 0 && (
           <AnimatePresence initial={false}>
             {sortedBases.map((resource: ResourceItemProps) => {
-              const status = `Last updated ${timeSince(resource.lastUsed)} ago`;
+              const status = `${t("local.lastUpdated")} ${timeSince(resource.lastUsed)}`;
 
               return (
                 <motion.div
@@ -260,7 +262,7 @@ export function ResourceItemList({
                       }}
                     >
                       <Pencil size={16} className="mr-2" />
-                      Edit base
+                      {t("local.editBase")}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
@@ -270,7 +272,7 @@ export function ResourceItemList({
                       }}
                     >
                       <Trash size={16} className="mr-2" />
-                      Remove base
+                      {t("local.removeBase")}
                     </DropdownMenuItem>
                   </ResourceCard>
                 </motion.div>

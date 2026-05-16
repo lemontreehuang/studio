@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { Database, List, Plus } from "@phosphor-icons/react";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { PropsWithChildren, useState } from "react";
+import { useTranslation } from "react-i18next";
 import NavigationProfile from "./nav-profile";
 import NavigationSigninBanner from "./nav-signin-banner";
 import { useSession } from "./session-provider";
@@ -20,6 +21,7 @@ export default function NavigationLayout({ children }: PropsWithChildren) {
   const { workspaces, loading: workspaceLoading } = useWorkspaces();
   const pathname = usePathname();
   const { workspaceId } = useParams<{ workspaceId?: string }>();
+  const { t } = useTranslation();
 
   return (
     <div className="flex w-screen flex-col lg:h-screen lg:flex-row">
@@ -52,10 +54,10 @@ export default function NavigationLayout({ children }: PropsWithChildren) {
           )}
         >
           <div className="flex flex-1 flex-col">
-            <SidebarMenuHeader text="Workspace" />
+            <SidebarMenuHeader text={t("local.workspace")} />
             <SidebarMenuItem
               selected={pathname === "/local" || pathname === "/local-setting"}
-              text="Local Workspace"
+              text={t("local.localWorkspace")}
               icon={Database}
               href="/local"
             />
@@ -95,7 +97,7 @@ export default function NavigationLayout({ children }: PropsWithChildren) {
             )}
 
             <SidebarMenuItem
-              text={"New Workspace"}
+              text={t("local.newWorkspace")}
               icon={Plus}
               onClick={() => {
                 if (session?.user) {

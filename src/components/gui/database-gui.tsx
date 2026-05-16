@@ -1,4 +1,5 @@
 "use client";
+import { useTranslation } from "react-i18next";
 import QueryWindow from "@/components/gui/tabs/query-tab";
 import {
   ResizableHandle,
@@ -33,6 +34,7 @@ export default function DatabaseGui() {
     setDefaultWidthPercentage((DEFAULT_WIDTH / window.innerWidth) * 100);
   }, []);
 
+  const { t } = useTranslation();
   const { databaseDriver, docDriver, extensions, containerClassName } =
     useStudioContext();
 
@@ -40,10 +42,10 @@ export default function DatabaseGui() {
   const { currentSchemaName } = useSchema();
   const [tabs, setTabs] = useState<WindowTabItemProps[]>(() => [
     {
-      title: "Query",
+      title: t("tabs.query"),
       identifier: "query",
       key: "query",
-      component: <QueryWindow initialName="Query" />,
+      component: <QueryWindow initialName={t("tabs.query")} />,
       icon: Binoculars,
       type: "query",
     },
@@ -133,46 +135,46 @@ export default function DatabaseGui() {
     return [
       {
         key: "database",
-        name: "Schema",
+        name: t("sidebar.schema"),
         content: <SchemaView />,
         icon: <Table weight="light" size={24} />,
       },
       docDriver
         ? {
             key: "saved",
-            name: "Queries",
+            name: t("sidebar.queries"),
             content: <SavedDocTab />,
             icon: <Binoculars weight="light" size={24} />,
           }
         : undefined,
       {
         key: "tools",
-        name: "Tools",
+        name: t("sidebar.tools"),
         content: <ToolSidebar />,
         icon: <GearSix weight="light" size={24} />,
       },
       ...extensions.getSidebars(),
     ].filter(Boolean) as SidebarTabItem[];
-  }, [docDriver, extensions]);
+  }, [docDriver, extensions, t]);
 
   const tabSideMenu = useMemo(() => {
     return [
       {
-        text: "New Query",
+        text: t("tabs.newQuery"),
         onClick: () => {
           scc.tabs.openBuiltinQuery({});
         },
       },
       databaseDriver.getFlags().supportCreateUpdateTable
         ? {
-            text: "New Table",
+            text: t("tabs.newTable"),
             onClick: () => {
               scc.tabs.openBuiltinSchema({ schemaName: currentSchemaName });
             },
           }
         : undefined,
     ].filter(Boolean) as { text: string; onClick: () => void }[];
-  }, [currentSchemaName, databaseDriver]);
+  }, [currentSchemaName, databaseDriver, t]);
 
   // Send to analytic when tab changes.
   const previousLogTabKey = useRef<string>("");

@@ -17,6 +17,7 @@ import {
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { localSettingDialog } from "./local-setting-dialog";
 import { useSession } from "./session-provider";
 
@@ -24,6 +25,7 @@ export default function NavigationProfile() {
   const { resolvedTheme, forcedTheme, setTheme } = useTheme();
   const { session, isLoading } = useSession();
   const router = useRouter();
+  const { t } = useTranslation();
 
   const theme = forcedTheme ?? resolvedTheme;
 
@@ -54,12 +56,12 @@ export default function NavigationProfile() {
             "flex items-center justify-start gap-2 p-1"
           )}
         >
-          <Avatar username="Guest" as="div" />
+          <Avatar username={t("local.guest")} as="div" />
           {!isLoading && (
             <div className="flex-1 text-left text-sm">
               {session
                 ? session.user.first_name + " " + session?.user.last_name
-                : "Guest"}
+                : t("local.guest")}
             </div>
           )}
 
@@ -73,13 +75,13 @@ export default function NavigationProfile() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-[250px]">
         <div className="flex gap-2 border-b p-2">
-          <Avatar size="lg" username={session?.user?.initials ?? "Guest"} />
+          <Avatar size="lg" username={session?.user?.initials ?? t("local.guest")} />
 
           <div className="flex flex-col justify-center">
             <div className="text-sm font-semibold">
               {session
                 ? session.user.first_name + " " + session?.user.last_name
-                : "Guest"}
+                : t("local.guest")}
             </div>
             {session && <div className="text-sm">{session.user.email}</div>}
           </div>
@@ -92,7 +94,7 @@ export default function NavigationProfile() {
               localSettingDialog.show({}).then().catch();
             }}
           >
-            Local Setting
+            {t("nav.localSetting")}
             <Gear size={20} />
           </DropdownMenuItem>
 
@@ -103,7 +105,7 @@ export default function NavigationProfile() {
                 router.push(`/account`);
               }}
             >
-              Account Setting
+              {t("nav.accountSetting")}
               <Gear size={20} />
             </DropdownMenuItem>
           )}
@@ -111,7 +113,7 @@ export default function NavigationProfile() {
             className="justify-between"
             onClick={onThemeToggleClicked}
           >
-            Theme
+            {t("nav.theme")}
             {theme === "dark" ? (
               <ToggleRight weight="fill" size={20} />
             ) : (
@@ -123,7 +125,7 @@ export default function NavigationProfile() {
               onClick={onLogoutClicked}
               className="justify-between"
             >
-              Log out <SignOut size={20} />
+              {t("nav.logOut")} <SignOut size={20} />
             </DropdownMenuItem>
           )}
           {!session && (
@@ -133,7 +135,7 @@ export default function NavigationProfile() {
               }}
               className="justify-between"
             >
-              Log in
+              {t("nav.logIn")}
             </DropdownMenuItem>
           )}
         </div>

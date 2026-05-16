@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { CaretDown, ChartBar, MagnifyingGlass } from "@phosphor-icons/react";
 import Link from "next/link";
 import { PropsWithChildren, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { getCreateResourceTypeList } from "./new-resource-list";
 
 function CreateResourceItem({
@@ -74,6 +75,7 @@ export default function NewResourceType({
 
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
+  const { t } = useTranslation();
 
   const cloudflare = resourceTypeList.filter((resource) => resource.cloudflare);
 
@@ -86,14 +88,14 @@ export default function NewResourceType({
         >
           <ChartBar className="h-8 w-8" />
           <div>
-            <div className="font-semibold">Board</div>
-            <div className="text-sm">Multiple source dashboard</div>
+            <div className="font-semibold">{t("local.board")}</div>
+            <div className="text-sm">{t("local.boardDesc")}</div>
           </div>
         </button>
       </div>
 
       <h2 className="px-3 py-2 text-base font-semibold">
-        Bring your existing databases
+        {t("local.bringDatabases")}
       </h2>
 
       <div className="my-2 grid grid-cols-2 gap-2 px-2">
@@ -133,7 +135,7 @@ export default function NewResourceType({
       return (
         <div className="flex h-16 flex-col items-center justify-center px-2 pb-2">
           <span className="text-base">
-            There is no resource type of <strong>{search}</strong>
+            {t("local.noResourceType")} <strong>{search}</strong>
           </span>
         </div>
       );
@@ -167,13 +169,13 @@ export default function NewResourceType({
       >
         <DropdownMenuTrigger asChild>
           <Button variant="primary" className={open ? "z-25" : ""}>
-            New Resource <CaretDown />
+            {t("local.newResource")} <CaretDown />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-[500px] shadow-xl">
           <div className="p-2">
             <Input
-              placeholder="Search"
+              placeholder={t("common.search")}
               autoFocus
               className="bg-secondary w-full"
               value={search}

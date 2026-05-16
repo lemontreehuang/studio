@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { Plus } from "@phosphor-icons/react";
 import { LucideSearch } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { buttonVariants } from "../ui/button";
 import {
   DropdownMenu,
@@ -21,6 +22,7 @@ export default function SchemaView() {
   const { databaseDriver, extensions } = useStudioContext();
   const { currentSchemaName } = useSchema();
   const [isCreateSchema, setIsCreateSchema] = useState(false);
+  const { t } = useTranslation();
 
   const contentMenu = useMemo(() => {
     const items: StudioExtensionMenuItem[] = [];
@@ -29,7 +31,7 @@ export default function SchemaView() {
 
     if (flags.supportCreateUpdateTable) {
       items.push({
-        title: "Create Table",
+        title: t("schema.createTable"),
         key: "create-table",
         onClick: () => {
           scc.tabs.openBuiltinSchema({ schemaName: currentSchemaName });
@@ -39,7 +41,7 @@ export default function SchemaView() {
 
     if (flags.supportCreateUpdateDatabase) {
       items.push({
-        title: "Create Database/Schema",
+        title: t("schema.createDatabase"),
         key: "create-schema",
         onClick: () => {
           setIsCreateSchema(true);
@@ -107,7 +109,7 @@ export default function SchemaView() {
 
       <div className="flex flex-col p-4 pb-2">
         <div className="mb-5 flex items-center justify-between">
-          <h1 className="text-primary text-xl font-medium">Tables</h1>
+          <h1 className="text-primary text-xl font-medium">{t("schema.tables")}</h1>
           {activatorButton}
         </div>
 
@@ -122,7 +124,7 @@ export default function SchemaView() {
             type="text"
             className="h-full flex-1 grow bg-transparent p-2 pr-2 pl-2 text-sm font-light outline-hidden placeholder:text-neutral-500"
             value={search}
-            placeholder="Search tables"
+            placeholder={t("schema.searchTables")}
             onChange={(e) => {
               setSearch(e.currentTarget.value);
             }}

@@ -5,6 +5,7 @@ import { useTheme } from "next-themes";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ReactElement, useState } from "react";
+import { useTranslation } from "react-i18next";
 import ThemeToggle from "../theme-toggle";
 import {
   DropdownMenu,
@@ -30,6 +31,7 @@ interface SidebarTabProps {
 export default function SidebarTab({ tabs }: Readonly<SidebarTabProps>) {
   const { forcedTheme } = useTheme();
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const { t } = useTranslation();
   const [loadedIndex, setLoadedIndex] = useState(() => {
     const a: boolean[] = new Array(tabs.length).fill(false);
     a[0] = true;
@@ -71,7 +73,7 @@ export default function SidebarTab({ tabs }: Readonly<SidebarTabProps>) {
                   className="p-1 px-2 text-white"
                   style={{ background: "#000C" }}
                 >
-                  <div className="font-bold">Outerbase Studio</div>
+                  <div className="font-bold">{t("brand.name")}</div>
                   <div className="-mt-0.5 text-xs">
                     v{process.env.NEXT_PUBLIC_STUDIO_VERSION}
                   </div>
@@ -87,7 +89,7 @@ export default function SidebarTab({ tabs }: Readonly<SidebarTabProps>) {
               {config.onBack && (
                 <DropdownMenuItem onClick={config.onBack}>
                   <ArrowLeft className="mr-2" />
-                  Back to bases
+                  {t("sidebar.backToBases")}
                 </DropdownMenuItem>
               )}
               {config.onBack && <DropdownMenuSeparator />}
@@ -97,7 +99,7 @@ export default function SidebarTab({ tabs }: Readonly<SidebarTabProps>) {
                   href="https://github.com/outerbase/studio/issues"
                   target="_blank"
                 >
-                  Report issues
+                  {t("sidebar.reportIssues")}
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem inset>
@@ -106,7 +108,7 @@ export default function SidebarTab({ tabs }: Readonly<SidebarTabProps>) {
                   href="https://www.outerbase.com/about/"
                   target="_blank"
                 >
-                  About us
+                  {t("sidebar.aboutUs")}
                 </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>

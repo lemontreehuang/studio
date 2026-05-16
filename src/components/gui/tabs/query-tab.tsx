@@ -43,6 +43,7 @@ import {
   LucidePlay,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { format } from "sql-formatter";
 import { isExplainQueryPlan } from "../query-explanation";
@@ -72,6 +73,7 @@ export default function QueryWindow({
 }: QueryWindowProps) {
   const { databaseDriver, docDriver, agentDriver } = useStudioContext();
   const { refresh: refreshSchema, autoCompleteSchema } = useSchema();
+  const { t } = useTranslation();
   const [code, setCode] = useState(initialCode ?? "");
   const editorRef = useRef<ReactCodeMirrorRef>(null);
 
@@ -86,7 +88,7 @@ export default function QueryWindow({
   const { changeCurrentTab } = useTabsContext();
 
   const [namespaceName, setNamespaceName] = useState(
-    initialNamespace ?? "Unsaved Query"
+    initialNamespace ?? t("query.unsavedQuery")
   );
   const [savedKey, setSavedKey] = useState<string | undefined>(initialSavedKey);
   const [placeholders, setPlaceholders] = useState<Record<string, string>>({});
@@ -269,7 +271,7 @@ export default function QueryWindow({
           component: <ExplainResultTab data={queryResult.result} />,
           key: "explain_" + queryResult.order,
           identifier: "explain_" + queryResult.order,
-          title: "Explain (Visual)",
+          title: "Explain",
           icon: LucideMessageSquareWarning,
         });
       }
@@ -289,7 +291,7 @@ export default function QueryWindow({
       queryTabs.push({
         key: "summary",
         identifier: "summary",
-        title: "Summary",
+        title: t("query.summary"),
         icon: LucideMessageSquareWarning,
         component: (
           <div className="h-full w-full overflow-x-hidden overflow-y-auto">
@@ -353,10 +355,10 @@ export default function QueryWindow({
               <input
                 onBlur={(e) => {
                   changeCurrentTab({
-                    title: e.currentTarget.value || "Unnamed Query",
+                    title: e.currentTarget.value || t("query.unnamedQuery"),
                   });
                 }}
-                placeholder="Please name your query"
+                placeholder={t("query.namePlaceholder")}
                 spellCheck="false"
                 className="focus:border-secondary-foreground absolute top-0 right-0 bottom-0 left-0 rounded bg-transparent p-1 text-sm font-semibold outline-hidden"
                 value={name}
@@ -384,7 +386,7 @@ export default function QueryWindow({
                   )}
                 >
                   <LucidePlay className="mr-2 h-4 w-4" />
-                  Run
+                  {t("query.run")}
                 </button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -399,14 +401,14 @@ export default function QueryWindow({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
                     <DropdownMenuItem onClick={() => onRunClicked()}>
-                      Run Current Statement
+                      {t("query.runCurrent")}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onRunClicked(true)}>
-                      Run All Statements
+                      {t("query.runAll")}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => onRunClicked(false, true)}>
-                      Explain Current Statement
+                      {t("query.explainCurrent")}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -460,7 +462,7 @@ export default function QueryWindow({
                     onClick={onFormatClicked}
                     className="text-neutral-800 dark:text-neutral-200"
                   >
-                    Format
+                    {t("query.format")}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent className="p-4">
@@ -469,7 +471,7 @@ export default function QueryWindow({
                       {KEY_BINDING.format.toString()}
                     </span>
                   </p>
-                  <p>Format SQL queries for readability</p>
+                  <p>{t("query.formatTooltip")}</p>
                 </TooltipContent>
               </Tooltip>
             </div>

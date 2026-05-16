@@ -8,6 +8,7 @@ import { ExportFormat, exportTableData } from "@/lib/export-helper";
 import { Icon, Table } from "@phosphor-icons/react";
 import { LucideCog, LucideDatabase, LucideView } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ListView, ListViewItem } from "../listview";
 import { CloudflareIcon } from "../resource-card/icon";
 import SchemaCreateDialog from "./schema-editor/schema-create";
@@ -159,6 +160,7 @@ export default function SchemaList({ search }: Readonly<SchemaListProps>) {
   const [selected, setSelected] = useState("");
   const { refresh, schema, currentSchemaName } = useSchema();
   const [editSchema, setEditSchema] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   const [collapsed, setCollapsed] = useState(() => {
     return new Set<string>();
@@ -170,10 +172,10 @@ export default function SchemaList({ search }: Readonly<SchemaListProps>) {
 
   const exportFormats = useMemo(() => {
     return [
-      { title: "Export as CSV", format: "csv" },
-      { title: "Export as Excel", format: "xlsx" },
-      { title: "Export as JSON", format: "json" },
-      { title: "Export as SQL INSERT", format: "sql" },
+      { title: t("schema.exportAsCsv"), format: "csv" },
+      { title: t("schema.exportAsExcel"), format: "xlsx" },
+      { title: t("schema.exportAsJson"), format: "json" },
+      { title: t("schema.exportAsSqlInsert"), format: "sql" },
     ];
   }, []);
 
@@ -184,10 +186,10 @@ export default function SchemaList({ search }: Readonly<SchemaListProps>) {
       const schemaName = item?.schemaName ?? currentSchemaName;
 
       const createMenuSection = {
-        title: "Create",
+        title: t("common.create"),
         sub: [
           databaseDriver.getFlags().supportCreateUpdateTable && {
-            title: "Create Table",
+            title: t("schema.createTable"),
             onClick: () => {
               scc.tabs.openBuiltinSchema({
                 schemaName: item?.schemaName ?? currentSchemaName,
@@ -202,7 +204,7 @@ export default function SchemaList({ search }: Readonly<SchemaListProps>) {
         ? [
             isTable && databaseDriver.getFlags().supportCreateUpdateTable
               ? {
-                  title: "Edit Table",
+                  title: t("schema.editTable"),
                   onClick: () => {
                     scc.tabs.openBuiltinSchema({
                       schemaName: item?.schemaName ?? currentSchemaName,
@@ -218,7 +220,7 @@ export default function SchemaList({ search }: Readonly<SchemaListProps>) {
       const exportSection =
         isTable && selectedName
           ? {
-              title: "Export Table",
+              title: t("schema.exportTable"),
               sub: exportFormats.map(({ title, format }) => ({
                 title,
                 onClick: async () => {
@@ -238,7 +240,7 @@ export default function SchemaList({ search }: Readonly<SchemaListProps>) {
       return [
         createMenuSection,
         {
-          title: "Copy Name",
+          title: t("schema.copyName"),
           disabled: !selectedName,
           onClick: () => {
             window.navigator.clipboard.writeText(selectedName ?? "");
@@ -252,7 +254,7 @@ export default function SchemaList({ search }: Readonly<SchemaListProps>) {
         ...modificationSection,
         modificationSection.length > 0 ? { separator: true } : undefined,
 
-        { title: "Refresh", onClick: () => refresh() },
+        { title: t("common.refresh"), onClick: () => refresh() },
       ].filter(Boolean) as OpenContextMenuList;
     },
     [refresh, databaseDriver, currentSchemaName, extensions, exportFormats]

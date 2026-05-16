@@ -10,6 +10,7 @@ import { CaretDown } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import NavigationLayout from "../nav-layout";
 import { ResourceItemList, ResourceItemProps } from "../resource-item-helper";
 import { deleteLocalBaseDialog } from "./dialog-base-delete";
@@ -19,6 +20,7 @@ import { useLocalConnectionList, useLocalDashboardList } from "./hooks";
 
 export default function LocalConnectionPage() {
   const router = useRouter();
+  const { t } = useTranslation();
 
   const {
     data: localBases,
@@ -94,7 +96,7 @@ export default function LocalConnectionPage() {
                 <div className="flex flex-col gap-1 text-left">
                   <span className="text-base font-bold">SQLite Playground</span>
                   <span className="text-sm">
-                    Launch in-memory SQLite on browser
+                    {t("local.sqlitePlaygroundDesc")}
                   </span>
                 </div>
                 <CaretDown className="ml-4 h-4 w-4" />
@@ -108,7 +110,7 @@ export default function LocalConnectionPage() {
                 href="/playground/client"
                 className="bg-secondary hover:bg-primary hover:text-primary-foreground flex cursor-pointer flex-col gap-2 rounded p-2 py-4 text-base font-bold"
               >
-                Open Empty SQLite Database
+                {t("local.openEmptyDatabase")}
               </Link>
 
               <div className="flex gap-4">
@@ -118,8 +120,7 @@ export default function LocalConnectionPage() {
                 >
                   <span className="font-bold">Northwind</span>
                   <span className="text-sm">
-                    The Northwind Database is a sample business database for
-                    learning SQL queries and database design.
+                    {t("local.northwindDesc")}
                   </span>
                 </Link>
 
@@ -129,8 +130,7 @@ export default function LocalConnectionPage() {
                 >
                   <span className="font-bold">Chinook</span>
                   <span className="text-sm">
-                    The Chinook Database is a sample digital media store
-                    database for learning and practicing SQL queries.
+                    {t("local.chinookDesc")}
                   </span>
                 </Link>
               </div>
@@ -154,9 +154,9 @@ export default function LocalConnectionPage() {
           >
             <MySQLIcon className="h-10 w-10" />
             <div className="flex flex-col gap-1 text-left">
-              <span className="text-base font-bold">MySQL Playgorund</span>
+              <span className="text-base font-bold">MySQL Playground</span>
               <span className="text-sm">
-                Spin up cloud MySQL sandbox instance
+                {t("local.mysqlPlaygroundDesc")}
               </span>
             </div>
           </button>

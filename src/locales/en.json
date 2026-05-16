@@ -1,0 +1,115 @@
+{
+  "common": {
+    "new": "New",
+    "create": "Create",
+    "edit": "Edit",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "save": "Save",
+    "close": "Close",
+    "refresh": "Refresh",
+    "search": "Search",
+    "export": "Export",
+    "import": "Import",
+    "copy": "Copy",
+    "loading": "Loading...",
+    "confirm": "Confirm",
+    "back": "Back",
+    "yes": "Yes",
+    "no": "No",
+    "ok": "OK",
+    "error": "Error",
+    "success": "Success",
+    "warning": "Warning"
+  },
+  "brand": {
+    "name": "Outerbase Studio",
+    "description": "Outerbase Studio is a fully-featured, lightweight GUI client for managing SQLite-based databases like Turso, LibSQL, and rqlite. It runs entirely in your browser, so there's no need to download anything."
+  },
+  "sidebar": {
+    "schema": "Schema",
+    "queries": "Queries",
+    "tools": "Tools",
+    "backToBases": "Back to bases",
+    "reportIssues": "Report issues",
+    "aboutUs": "About us"
+  },
+  "schema": {
+    "tables": "Tables",
+    "searchTables": "Search tables",
+    "createTable": "Create Table",
+    "createDatabase": "Create Database/Schema",
+    "editTable": "Edit Table",
+    "copyName": "Copy Name",
+    "exportTable": "Export Table",
+    "exportAsCsv": "Export as CSV",
+    "exportAsExcel": "Export as Excel",
+    "exportAsJson": "Export as JSON",
+    "exportAsSqlInsert": "Export as SQL INSERT"
+  },
+  "tabs": {
+    "newQuery": "New Query",
+    "newTable": "New Table",
+    "query": "Query"
+  },
+  "query": {
+    "run": "Run",
+    "runSelected": "Run Selected",
+    "format": "Format",
+    "clear": "Clear",
+    "explain": "Explain Query",
+    "rowsAffected": "Rows Affected",
+    "queryDuration": "Query Duration",
+    "noResult": "No Result",
+    "resultTab": "Result",
+    "messagesTab": "Messages"
+  },
+  "tableEditor": {
+    "columnName": "Column Name",
+    "columnType": "Type",
+    "primaryKey": "Primary Key",
+    "notNull": "Not Null",
+    "unique": "Unique",
+    "defaultValue": "Default Value",
+    "autoIncrement": "Auto Increment",
+    "addColumn": "Add Column",
+    "removeColumn": "Remove Column",
+    "saveChanges": "Save Changes",
+    "discardChanges": "Discard Changes",
+    "addRow": "Add Row",
+    "deleteRow": "Delete Row",
+    "commitChanges": "Commit Changes",
+    "noChanges": "No Changes"
+  },
+  "connection": {
+    "title": "Connection Manager",
+    "newConnection": "New Connection",
+    "editConnection": "Edit Connection",
+    "deleteConnection": "Delete Connection",
+    "connectionName": "Connection Name",
+    "connectionType": "Connection Type",
+    "url": "Database URL",
+    "token": "Auth Token",
+    "connect": "Connect",
+    "disconnect": "Disconnect",
+    "testConnection": "Test Connection",
+    "openFile": "Open File",
+    "createNew": "Create New Database",
+    "savedConnections": "Saved Connections",
+    "recentConnections": "Recent Connections",
+    "localFile": "Local File"
+  },
+  "export": {
+    "title": "Export Data",
+    "format": "Export Format",
+    "fileName": "File Name",
+    "encoding": "Encoding",
+    "exportAll": "Export All",
+    "exportSelected": "Export Selected"
+  },
+  "toolbar": {
+    "undo": "Undo",
+    "redo": "Redo",
+    "toggleSidebar": "Toggle Sidebar"
+  }
+}

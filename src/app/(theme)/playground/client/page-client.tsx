@@ -23,6 +23,7 @@ import {
 import { useSearchParams } from "next/navigation";
 import Script from "next/script";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Database, SqlJsStatic } from "sql.js";
 
@@ -37,6 +38,7 @@ export default function PlaygroundEditorBody({
   const [sqlInit, setSqlInit] = useState<SqlJsStatic>();
   const searchParams = useSearchParams();
   const [databaseLoading, setDatabaseLoading] = useState(!!preloadDatabase);
+  const { t } = useTranslation();
 
   const [nativeDriver, setNativeDriver] = useState<Database>();
   const [driver, setDriver] = useState<SqljsDriver>();
@@ -151,7 +153,7 @@ export default function PlaygroundEditorBody({
     if (driver && driver.hasChanged()) {
       if (
         !confirm(
-          "You have some changes. Refresh will lose your change. Do you want to refresh"
+        "您有未保存的更改。刷新将丢失所有修改。确定要刷新吗？"
         )
       ) {
         return;
@@ -259,9 +261,9 @@ export default function PlaygroundEditorBody({
       return (
         <div className="p-4">
           <LucideLoader className="mb-2 h-12 w-12 animate-spin" />
-          <h1 className="mb-2 text-2xl font-bold">Loading Database</h1>
+          <h1 className="mb-2 text-2xl font-bold">{t("playground.loadingDatabase")}</h1>
           <p>
-            Please wait. We are downloading:
+            {t("playground.pleaseWait")}
             <br />
             <strong>{preloadDatabase}</strong>
           </p>
@@ -296,21 +298,21 @@ export default function PlaygroundEditorBody({
               <div className="flex items-center gap-1 rounded bg-yellow-300 p-2 text-xs text-black">
                 <LucideFile className="h-4 w-4" />
                 <span>
-                  Editing <strong>{fileName}</strong>
+                  {t("playground.editing")} <strong>{fileName}</strong>
                 </span>
               </div>
             )}
 
             {driver && (
               <ToolbarButton
-                text="Save"
+                text={t("common.save")}
                 onClick={onSaveClicked}
                 icon={<Save className="h-4 w-4" />}
               />
             )}
 
             <ToolbarButton
-              text="Open"
+              text={t("playground.open")}
               onClick={onOpenClicked}
               icon={<FolderOpenIcon className="h-4 w-4" />}
             />
@@ -319,7 +321,7 @@ export default function PlaygroundEditorBody({
               <>
                 <ToolbarSeparator />
                 <ToolbarButton
-                  text="Refresh"
+                  text={t("common.refresh")}
                   icon={<RefreshCcw className="h-4 w-4" />}
                   onClick={onReloadDatabase}
                 />

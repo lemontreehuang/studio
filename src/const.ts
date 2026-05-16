@@ -5,5 +5,5 @@ export enum MessageChannelName {
 }
 
 export const TAB_PREFIX_SAVED_QUERY = "saved-query-";
-export const WEBSITE_NAME = "Outerbase Studio";
-export const WEBSITE_GENERAL_DESCRIPTION = `${WEBSITE_NAME} is a fully-featured, lightweight GUI client for managing SQLite-based databases like Turso, LibSQL, and rqlite. It runs entirely in your browser, so there's no need to download anything`;
+export const WEBSITE_NAME = "WebSQLite Studio";
+export const WEBSITE_GENERAL_DESCRIPTION = `${WEBSITE_NAME} 是一个功能完整、轻量级的 SQLite 数据库管理工具。它完全运行在浏览器中，无需下载任何软件。`;
