@@ -158,6 +158,13 @@
     "freeTier": "免费",
     "toClose": "关闭"
   },
+  "erd": {
+    "title": "实体关系图 (ER 图)",
+    "relationalDiagram": "实体关系图",
+    "dropEmptyTables": "批量清空/删除表",
+    "exploreTableData": "浏览表数据",
+    "editTable": "编辑表结构"
+  },
   "export": {
     "title": "导出",
     "target": "导出目标",

@@ -25,6 +25,7 @@ import "@xyflow/react/dist/style.css";
 import { LucideRefreshCcw } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import SchemaNameSelect from "../../schema-editor/schema-name-select";
 import { Toolbar } from "../../toolbar";
 import { DownloadImageDiagram } from "./download-image-diagram";
@@ -287,6 +288,7 @@ function LayoutFlow() {
   const { schema: initialSchema, currentSchemaName, refresh } = useSchema();
   const [schema] = useState(initialSchema);
   const [selectedSchema, setSelectedSchema] = useState(currentSchemaName);
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (selectedSchema) {
@@ -310,7 +312,7 @@ function LayoutFlow() {
     <div className="relative flex h-full flex-col overflow-hidden">
       <div className="border-b pb-1">
         <h1 className="text-primary mb-1 p-4 text-lg font-semibold">
-          Entity Relationship Diagram
+          {t("erd.title")}
         </h1>
       </div>
       <div className="shrink-0 grow-0 border-b border-neutral-200 dark:border-neutral-800">

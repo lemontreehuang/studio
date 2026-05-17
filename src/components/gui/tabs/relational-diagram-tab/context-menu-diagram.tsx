@@ -1,5 +1,6 @@
 import { useStudioContext } from "@/context/driver-provider";
 import { PropsWithChildren } from "react";
+import { useTranslation } from "react-i18next";
 
 import { scc } from "@/core/command";
 import {
@@ -15,6 +16,7 @@ export default function ContextMenuERD({
   children,
 }: PropsWithChildren<{ schemaName: string; tableName: string }>) {
   const { databaseDriver } = useStudioContext();
+  const { t } = useTranslation();
 
   const handleEditTable = () => {
     scc.tabs.openBuiltinSchema({
@@ -32,11 +34,11 @@ export default function ContextMenuERD({
       <ContextMenuTrigger>{children}</ContextMenuTrigger>
       <ContextMenuContent>
         <ContextMenuItem onClick={handleOpenTableData}>
-          Expore Table Data
+          {t("erd.exploreTableData")}
         </ContextMenuItem>
         {databaseDriver.getFlags().supportCreateUpdateTable && (
           <ContextMenuItem onClick={handleEditTable}>
-            Edit Table
+            {t("erd.editTable")}
           </ContextMenuItem>
         )}
       </ContextMenuContent>

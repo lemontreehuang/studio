@@ -143,6 +143,13 @@
     "freeTier": "free tier",
     "toClose": "to close"
   },
+  "erd": {
+    "title": "Entity Relationship Diagram",
+    "relationalDiagram": "Relational Diagram",
+    "dropEmptyTables": "Drop & Empty Multiple Tables",
+    "exploreTableData": "Explore Table Data",
+    "editTable": "Edit Table"
+  },
   "export": {
     "title": "Export Data",
     "format": "Export Format",

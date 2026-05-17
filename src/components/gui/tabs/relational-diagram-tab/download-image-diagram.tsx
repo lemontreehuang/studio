@@ -6,7 +6,7 @@ import { toPng } from 'html-to-image';
 function downloadImage(dataUrl: string) {
   const a = document.createElement('a');
 
-  a.setAttribute('download', 'outerbase_relationship_diagram.png');
+  a.setAttribute('download', 'websqlite_er_diagram.png');
   a.setAttribute('href', dataUrl);
   a.click();
 }
