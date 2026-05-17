@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { getFormatHandlers } from "@/lib/export-helper";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Popover, PopoverContent, PopoverTrigger } from "../../ui/popover";
 import OptimizeTableState, {
   TableSelectionRange,
@@ -69,6 +70,7 @@ export default function ExportResultButton({
 }: {
   data: OptimizeTableState;
 }) {
+  const { t } = useTranslation();
   const getDefaultOption = useCallback((format: ExportFormat) => {
     switch (format) {
       case "csv":
@@ -222,15 +224,15 @@ export default function ExportResultButton({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button variant={"secondary"} onClick={() => setOpen(!open)}>
-          <div className="text-sm">Export</div>
+          <div className="text-sm">{t("export.title")}</div>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="min-w[550px] w-[550px] p-0">
         <div>
           <div className="flex flex-col gap-2 border-b p-4">
-            <h1 className="text-lg font-bold">Export</h1>
+            <h1 className="text-lg font-bold">{t("export.title")}</h1>
 
-            <small>Export target</small>
+            <small>{t("export.target")}</small>
 
             <RadioGroup
               className="flex gap-4"
@@ -244,18 +246,18 @@ export default function ExportResultButton({
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="clipboard" id="export-clipboard" />
-                <Label htmlFor="export-clipboard">Copy to clipboard</Label>
+                <Label htmlFor="export-clipboard">{t("export.copyToClipboard")}</Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="file" id="export-file" />
-                <Label htmlFor="export-file">Export to file</Label>
+                <Label htmlFor="export-file">{t("export.exportToFile")}</Label>
               </div>
             </RadioGroup>
           </div>
 
           <div className="mb-2 flex grow border-b">
             <div className="flex flex-col border-r p-2 px-4">
-              <small>Output format</small>
+              <small>{t("export.outputFormat")}</small>
               <RadioGroup
                 className="mt-2 flex flex-col gap-3"
                 defaultValue={exportSetting.format}
@@ -323,7 +325,7 @@ export default function ExportResultButton({
             </div>
             <div className="grow">
               <div className="flex grow flex-col border-b p-2 px-4">
-                <small>Selection</small>
+                <small>{t("export.selection")}</small>
                 <div>
                   <RadioGroup
                     className="my-2 gap-3"
@@ -341,7 +343,7 @@ export default function ExportResultButton({
                         htmlFor="export-selection-complete"
                         className="flex-1 font-normal"
                       >
-                        Complete ({data.getAllRows().length} rows)
+                        {t("export.complete")} ({data.getAllRows().length} {t("export.rows")})
                       </Label>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -354,7 +356,7 @@ export default function ExportResultButton({
                         htmlFor="export-selection-rows"
                         className="flex-1 font-normal"
                       >
-                        Rows ({selectionCount.rows} rows)
+                        {t("export.selectedRows")} ({selectionCount.rows} {t("export.rows")})
                       </Label>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -367,7 +369,7 @@ export default function ExportResultButton({
                         htmlFor="export-selection-cols"
                         className="flex-1 font-normal"
                       >
-                        Columns ({selectionCount.cols} cols)
+                        {t("export.selectedCols")} ({selectionCount.cols} {t("export.cols")})
                       </Label>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -380,7 +382,7 @@ export default function ExportResultButton({
                         htmlFor="export-selection-range"
                         className="flex-1 font-normal"
                       >
-                        Ranges
+                        {t("export.ranges")}
                       </Label>
                     </div>
 
@@ -401,10 +403,10 @@ export default function ExportResultButton({
                 </div>
               </div>
               <div className="ml-2 flex grow flex-col p-2">
-                <small>Options</small>
+                <small>{t("export.options")}</small>
                 <div className="mt-2 flex flex-col space-y-2">
                   <div className="flex items-center space-x-4">
-                    <span className="w-[120px] text-sm">Field separator:</span>
+                    <span className="w-[120px] text-sm">{t("export.fieldSeparator")}:</span>
                     <div className="flex h-[28px] w-[120px] items-center rounded-md bg-white px-3 py-2.5 text-base text-neutral-900 outline outline-1 outline-neutral-200 focus:outline-neutral-400/70 dark:bg-neutral-900 dark:text-white dark:outline-neutral-800 dark:focus:outline-neutral-600">
                       <input
                         disabled={exportSetting.format !== "delimited"}
@@ -424,7 +426,7 @@ export default function ExportResultButton({
                     </div>
                   </div>
                   <div className="flex items-center space-x-4">
-                    <span className="w-[120px] text-sm">Line terminator:</span>
+                    <span className="w-[120px] text-sm">{t("export.lineTerminator")}:</span>
                     <div className="flex h-[28px] w-[120px] items-center rounded-md bg-white px-3 py-2.5 text-base text-neutral-900 outline outline-1 outline-neutral-200 focus:outline-neutral-400/70 dark:bg-neutral-900 dark:text-white dark:outline-neutral-800 dark:focus:outline-neutral-600">
                       <input
                         disabled={exportSetting.format !== "delimited"}
@@ -445,7 +447,7 @@ export default function ExportResultButton({
                   </div>
 
                   <div className="flex items-center space-x-4">
-                    <span className="w-[120px] text-sm">Encloser:</span>
+                    <span className="w-[120px] text-sm">{t("export.encloser")}:</span>
                     <div className="flex h-[28px] w-[120px] items-center rounded-md bg-white px-3 py-2.5 text-base text-neutral-900 outline outline-1 outline-neutral-200 focus:outline-neutral-400/70 dark:bg-neutral-900 dark:text-white dark:outline-neutral-800 dark:focus:outline-neutral-600">
                       <input
                         disabled={exportSetting.format !== "delimited"}
@@ -465,7 +467,7 @@ export default function ExportResultButton({
                     </div>
                   </div>
                   <div className="flex items-center space-x-4">
-                    <span className="w-[120px] text-sm">NULL Value:</span>
+                    <span className="w-[120px] text-sm">{t("export.nullValue")}:</span>
                     <div className="flex h-[28px] w-[120px] items-center rounded-md bg-white px-3 py-2.5 text-base text-neutral-900 outline outline-1 outline-neutral-200 focus:outline-neutral-400/70 dark:bg-neutral-900 dark:text-white dark:outline-neutral-800 dark:focus:outline-neutral-600">
                       <input
                         type="text"
@@ -490,7 +492,7 @@ export default function ExportResultButton({
         </div>
         <div className="p-2 px-4 pt-0">
           <Button size="sm" onClick={onExportClicked}>
-            Export
+            {t("export.title")}
           </Button>
         </div>
       </PopoverContent>

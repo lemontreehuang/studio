@@ -12,8 +12,10 @@ import {
   updateAgentFromLocalStorage,
 } from "@/lib/ai-agent-storage";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export const localSettingDialog = createDialog(({ close }) => {
+  const { t } = useTranslation();
   const [token, setToken] = useState<string>("");
 
   useEffect(() => {
@@ -38,18 +40,17 @@ export const localSettingDialog = createDialog(({ close }) => {
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Local Setting</DialogTitle>
+        <DialogTitle>{t("nav.localSetting")}</DialogTitle>
 
         <DialogDescription>
-          Bring your OpenAI token to enable the AI assistant. Your token is
-          stored in localStorage. We do not store your token on our server.
+          {t("settings.localSettingDesc")}
         </DialogDescription>
       </DialogHeader>
 
       <LabelInput
         type="password"
-        label="Token"
-        placeholder="Token"
+        label={t("settings.token")}
+        placeholder={t("settings.token")}
         size="lg"
         value={token}
         onValueChange={setToken}
@@ -57,7 +58,7 @@ export const localSettingDialog = createDialog(({ close }) => {
 
       <DialogFooter>
         <Button size="lg" variant="primary" onClick={onSaveClicked}>
-          Save
+          {t("common.save")}
         </Button>
       </DialogFooter>
     </>

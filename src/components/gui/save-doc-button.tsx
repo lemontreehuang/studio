@@ -6,6 +6,7 @@ import {
 } from "@/drivers/saved-doc/saved-doc-driver";
 import { LucideFolderGit, LucideLoader } from "lucide-react";
 import { useCallback, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "../ui/button";
 import {
   DropdownMenu,
@@ -30,6 +31,7 @@ export default function SaveDocButton({
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const { docDriver } = useStudioContext();
+  const { t } = useTranslation();
   const [namespaceList, setNamespaceList] = useState<SavedDocNamespace[]>([]);
 
   const onSaveQuery = useCallback(
@@ -90,11 +92,11 @@ export default function SaveDocButton({
           ) : (
             <></>
           )}
-          Save
+          {t("common.save")}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent>
-        <DropdownMenuLabel>Where do you want to save to?</DropdownMenuLabel>
+        <DropdownMenuLabel>{t("query.saveWhere")}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {namespaceList.map((n) => {
           return (

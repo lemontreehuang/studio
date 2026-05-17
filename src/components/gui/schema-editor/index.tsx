@@ -4,6 +4,7 @@ import { generateId } from "@/lib/generate-id";
 import { checkSchemaChange } from "@/lib/sql/sql-generate.schema";
 import { LucideCode, LucideCopy, LucidePlus, LucideSave } from "lucide-react";
 import { Dispatch, SetStateAction, useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Button, buttonVariants } from "../../ui/button";
 import { Input } from "../../ui/input";
@@ -29,6 +30,7 @@ export default function SchemaEditor({
   onDiscard,
 }: Readonly<Props>) {
   const { databaseDriver } = useStudioContext();
+  const { t } = useTranslation();
   const isCreateScript = value.name.old === "";
 
   const onAddColumn = useCallback(() => {
@@ -83,7 +85,7 @@ export default function SchemaEditor({
             size={"sm"}
           >
             <LucideSave className="mr-2 h-4 w-4" />
-            Save
+            {t("common.save")}
           </Button>
           <Button
             size={"sm"}
@@ -92,7 +94,7 @@ export default function SchemaEditor({
             disabled={!hasChange}
             className="text-red-500"
           >
-            Discard Change
+            {t("schemaEditor.discardChange")}
           </Button>
 
           <div>
@@ -101,7 +103,7 @@ export default function SchemaEditor({
 
           <Button variant="ghost" onClick={onAddColumn} size={"sm"}>
             <LucidePlus className="mr-1 h-4 w-4" />
-            Add Column
+            {t("schemaEditor.addColumn")}
           </Button>
 
           <div>
@@ -112,11 +114,11 @@ export default function SchemaEditor({
             <PopoverTrigger>
               <div className={buttonVariants({ size: "sm", variant: "ghost" })}>
                 <LucideCode className="mr-1 h-4 w-4" />
-                SQL Preview
+                {t("schemaEditor.sqlPreview")}
               </div>
             </PopoverTrigger>
             <PopoverContent style={{ width: 500 }}>
-              <div className="mb-1 text-xs font-semibold">SQL Preview</div>
+              <div className="mb-1 text-xs font-semibold">{t("schemaEditor.sqlPreview")}</div>
               <div style={{ maxHeight: 400 }} className="overflow-y-auto">
                 <CodePreview code={previewScript} />
               </div>
@@ -130,7 +132,7 @@ export default function SchemaEditor({
                   className={buttonVariants({ size: "sm", variant: "ghost" })}
                 >
                   <LucideCode className="mr-1 h-4 w-4" />
-                  Create Script
+                  {t("schemaEditor.createScript")}
                 </div>
               </PopoverTrigger>
               <PopoverContent style={{ width: 500 }}>
@@ -138,14 +140,14 @@ export default function SchemaEditor({
                   variant={"outline"}
                   size="sm"
                   onClick={() => {
-                    toast.success("Copied create script successfully");
+                    toast.success(t("schemaEditor.copySuccess"));
                     window.navigator.clipboard.writeText(
                       value.createScript ?? ""
                     );
                   }}
                 >
                   <LucideCopy className="mr-2 h-4 w-4" />
-                  Copy
+                  {t("common.copy")}
                 </Button>
                 <div
                   style={{ maxHeight: 400 }}
@@ -160,9 +162,9 @@ export default function SchemaEditor({
 
         <div className="mx-3 mt-3 mb-4 ml-5 flex items-center gap-2">
           <div>
-            <div className="mb-1 text-xs font-medium">Table Name</div>
+            <div className="mb-1 text-xs font-medium">{t("schemaEditor.tableName")}</div>
             <Input
-              placeholder="Table Name"
+              placeholder={t("schemaEditor.tableNamePlaceholder")}
               value={value.name.new ?? value.name.old ?? ""}
               onChange={(e) => {
                 onChange({
@@ -177,7 +179,7 @@ export default function SchemaEditor({
             />
           </div>
           <div>
-            <div className="mb-1 text-xs font-medium">Schema</div>
+            <div className="mb-1 text-xs font-medium">{t("schemaEditor.schema")}</div>
             <SchemaNameSelect
               readonly={!isCreateScript}
               value={value.schemaName}

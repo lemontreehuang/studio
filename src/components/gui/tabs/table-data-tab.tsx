@@ -30,6 +30,7 @@ import {
   LucideRefreshCcw,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import AggregateResultButton from "../aggregate-result/aggregate-result-button";
 import ExportResultButton from "../export/export-result-button";
 import OpacityLoading from "../loading-opacity";
@@ -53,6 +54,7 @@ export default function TableDataWindow({
   const { updateTableSchema } = useAutoComplete();
   const { schema } = useSchema();
   const { databaseDriver } = useStudioContext();
+  const { t } = useTranslation();
   const [error, setError] = useState<string>();
   const [executeError, setExecuteError] = useState<string | null>(null);
 
@@ -207,12 +209,12 @@ export default function TableDataWindow({
     <div className="flex h-full w-full flex-col overflow-hidden">
       {executeError && (
         <AlertDialog open={true}>
-          <AlertDialogContent title="Error">
-            <AlertDialogTitle>Error</AlertDialogTitle>
+          <AlertDialogContent title={t("common.error")}>
+            <AlertDialogTitle>{t("common.error")}</AlertDialogTitle>
             <AlertDialogDescription>{executeError} </AlertDialogDescription>
             <AlertDialogFooter>
               <AlertDialogAction onClick={() => setExecuteError(null)}>
-                Continue
+                {t("common.continue")}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -234,11 +236,11 @@ export default function TableDataWindow({
               onClick={onNewRow}
               className="flex items-center gap-1"
             >
-              <div className="text-sm">Add row</div>
+              <div className="text-sm">{t("tableEditor.addRow")}</div>
             </Button>
 
             <Button variant={"secondary"} onClick={onRemoveRow}>
-              <div className="text-sm">Delete row</div>
+              <div className="text-sm">{t("tableEditor.deleteRow")}</div>
             </Button>
           </div>
 
@@ -288,12 +290,12 @@ export default function TableDataWindow({
                   disabled={!changeNumber || isExecuting}
                 >
                   <div className="text-sm">
-                    Save {changeNumber ? changeNumber.toString() : ""} changes
+                    {t("tableEditor.saveChanges", { count: changeNumber })}
                   </div>
                 </Button>
 
                 <Button variant={"destructive"} onClick={onDiscard}>
-                  <div className="text-sm">Discard</div>
+                  <div className="text-sm">{t("tableEditor.discard")}</div>
                 </Button>
               </>
             ) : (
@@ -370,7 +372,7 @@ export default function TableDataWindow({
                     alt="Limit"
                   />
                 </TooltipTrigger>
-                <TooltipContent>Limit</TooltipContent>
+                <TooltipContent>{t("tableEditor.limit")}</TooltipContent>
               </Tooltip>
 
               <Tooltip>
@@ -397,7 +399,7 @@ export default function TableDataWindow({
                     alt="Offset"
                   />
                 </TooltipTrigger>
-                <TooltipContent>Offset</TooltipContent>
+                <TooltipContent>{t("tableEditor.offset")}</TooltipContent>
               </Tooltip>
             </div>
 

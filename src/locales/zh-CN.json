@@ -20,7 +20,8 @@
     "ok": "确定",
     "error": "错误",
     "success": "成功",
-    "warning": "警告"
+    "warning": "警告",
+    "continue": "继续"
   },
   "brand": {
     "name": "WebSQLite Studio",
@@ -70,7 +71,8 @@
     "summary": "执行摘要",
     "unsavedQuery": "未保存的查询",
     "unnamedQuery": "未命名查询",
-    "namePlaceholder": "请命名您的查询"
+    "namePlaceholder": "请命名您的查询",
+    "saveWhere": "要保存到哪里？"
   },
   "tableEditor": {
     "columnName": "列名",
@@ -82,12 +84,25 @@
     "autoIncrement": "自增",
     "addColumn": "添加列",
     "removeColumn": "删除列",
-    "saveChanges": "保存更改",
+    "saveChanges": "保存 {{count}} 个更改",
     "discardChanges": "放弃更改",
+    "discard": "放弃",
     "addRow": "添加行",
     "deleteRow": "删除行",
     "commitChanges": "提交更改",
-    "noChanges": "无更改"
+    "noChanges": "无更改",
+    "limit": "限制行数",
+    "offset": "偏移量"
+  },
+  "schemaEditor": {
+    "discardChange": "放弃更改",
+    "addColumn": "添加列",
+    "sqlPreview": "SQL 预览",
+    "createScript": "创建脚本",
+    "copySuccess": "成功复制创建脚本",
+    "tableName": "表名",
+    "tableNamePlaceholder": "表名",
+    "schema": "Schema"
   },
   "connection": {
     "title": "连接管理",
@@ -105,15 +120,32 @@
     "createNew": "新建数据库",
     "savedConnections": "已保存的连接",
     "recentConnections": "最近连接",
-    "localFile": "本地文件"
+    "localFile": "本地文件",
+    "connectTo": "连接到 {{db}} 数据库",
+    "editDatabase": "编辑 {{db}}"
+  },
+  "settings": {
+    "localSettingDesc": "提供 OpenAI Token 以启用 AI 助手。您的 Token 将保存在本地，我们不会在服务器端保存。",
+    "token": "认证令牌"
   },
   "export": {
-    "title": "导出数据",
-    "format": "导出格式",
-    "fileName": "文件名",
-    "encoding": "编码",
-    "exportAll": "导出全部",
-    "exportSelected": "导出选中"
+    "title": "导出",
+    "target": "导出目标",
+    "copyToClipboard": "复制到剪贴板",
+    "exportToFile": "导出为文件",
+    "outputFormat": "输出格式",
+    "selection": "导出范围",
+    "complete": "全部",
+    "rows": "行",
+    "selectedRows": "选中的行",
+    "selectedCols": "选中的列",
+    "cols": "列",
+    "ranges": "选中区域",
+    "options": "选项",
+    "fieldSeparator": "字段分隔符",
+    "lineTerminator": "行终止符",
+    "encloser": "包围符",
+    "nullValue": "空值 (NULL)"
   },
   "toolbar": {
     "undo": "撤销",

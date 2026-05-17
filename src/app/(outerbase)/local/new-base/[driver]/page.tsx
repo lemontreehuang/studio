@@ -11,6 +11,7 @@ import { getDatabaseFriendlyName } from "@/components/resource-card/utils";
 import { ArrowLeft, ArrowRight, FloppyDisk } from "@phosphor-icons/react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { mutate } from "swr";
 import { createLocalConnection } from "../../hooks";
 
@@ -19,6 +20,7 @@ export const runtime = "edge";
 export default function LocalNewBasePage() {
   const { driver } = useParams<{ driver: string }>();
   const router = useRouter();
+  const { t } = useTranslation();
   const searchParams = useSearchParams()
   const [value, setValue] = useState<CommonConnectionConfig>({
     name: "",
@@ -69,7 +71,7 @@ export default function LocalNewBasePage() {
   }, [template, value, router]);
 
   if (!template?.localTo || !template?.localFrom) {
-    return <div>Invalid driver</div>;
+    return <div>{t("common.error")}</div>;
   }
 
   return (
@@ -78,14 +80,14 @@ export default function LocalNewBasePage() {
         <div className="my-8 flex">
           <Button variant="secondary" size="lg" href="/local" as="link">
             <ArrowLeft />
-            Back
+            {t("common.back")}
           </Button>
 
           <div className="flex-1"></div>
         </div>
 
         <div className="mb-8 text-2xl font-bold">
-          <div>Connect to {getDatabaseFriendlyName(driver)} database</div>
+          <div>{t("connection.connectTo", { db: getDatabaseFriendlyName(driver) })}</div>
         </div>
 
         <ConnectionConfigEditor
@@ -105,7 +107,7 @@ export default function LocalNewBasePage() {
             disabled={loading}
           >
             <ArrowRight />
-            Connect
+            {t("connection.connect")}
           </Button>
           <Button
             variant="secondary"
@@ -114,7 +116,7 @@ export default function LocalNewBasePage() {
             disabled={loading}
           >
             <FloppyDisk />
-            Save
+            {t("common.save")}
           </Button>
         </div>
       </div>
