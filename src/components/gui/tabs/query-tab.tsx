@@ -179,7 +179,7 @@ export default function QueryWindow({
             { name: "tokenize_mismatch", data: { token, finalStatements } },
           ]);
 
-          toast.error("Failed to tokenize SQL statement");
+          toast.error(t("query.errorTokenize"));
 
           return;
         }
@@ -192,7 +192,7 @@ export default function QueryWindow({
           variables.length > 0 &&
           variables.some((p) => placeholders[p] === "")
         ) {
-          toast.error("Please fill in all placeholders");
+          toast.error(t("query.errorFillPlaceholders"));
           return;
         }
 

@@ -5,6 +5,7 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   placeholders: Record<string, string>;
@@ -15,6 +16,7 @@ export function QueryPlaceholder({
   placeholders,
   onChange,
 }: Props): JSX.Element {
+  const { t } = useTranslation();
   const placeholderCount = Object.keys(placeholders).length;
   const emptyPlaceholderCount = Object.values(placeholders).filter(
     (v) => v === ""
@@ -27,8 +29,8 @@ export function QueryPlaceholder({
         <table className="w-full border-separate border-spacing-0 text-sm">
           <thead className="sticky top-0">
             <tr className="h-[35px] bg-secondary text-xs">
-              <th className="border-r px-2 text-left">Variables</th>
-              <th className="px-2 text-left">Value</th>
+              <th className="border-r px-2 text-left">{t("query.variables")}</th>
+              <th className="px-2 text-left">{t("common.edit")}</th>
             </tr>
           </thead>
           <tbody>
@@ -39,7 +41,7 @@ export function QueryPlaceholder({
                   <input
                     type="text"
                     className="h-full w-full border-0 bg-inherit font-mono outline-hidden"
-                    placeholder="Please fill your value"
+                    placeholder={t("query.variablePlaceholder")}
                     value={value ?? ""}
                     onChange={(e) => {
                       const newValue = e.currentTarget.value;
@@ -68,7 +70,7 @@ export function QueryPlaceholder({
               <div className="h-2 w-2 animate-ping rounded-full bg-red-500"></div>
             </div>
           )}
-          Variables
+          {t("query.variables")}
           <span className="ml-1 text-xs">
             {placeholderCount - emptyPlaceholderCount} / {placeholderCount}
           </span>
@@ -78,9 +80,7 @@ export function QueryPlaceholder({
         {placeholderTable}
 
         <p className="mt-2 text-sm">
-          Use <span className="bg-muted font-mono">&apos;&apos;</span> for an
-          empty string. If the value is a number, it will automatically be cast
-          to a number. To specify a numeric string, wrap it in single quote.
+          {t("query.variableHelp")}
         </p>
       </PopoverContent>
     </Popover>

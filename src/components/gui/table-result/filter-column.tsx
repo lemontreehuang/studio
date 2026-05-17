@@ -14,6 +14,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Check, ListChecks, LucideSettings2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import OptimizeTableState from "../table-optimized/optimize-table-state";
 
 import { Button } from "@/components/orbit/button";
@@ -25,6 +26,7 @@ export default function useTableResultColumnFilter({
 }) {
   const headers = state?.getHeaders() ?? [];
   const [columnIndexList, setColumnIndexList] = useState<number[]>([]);
+  const { t } = useTranslation();
 
   const columnFilterBadge = headers.length - columnIndexList.length;
 
@@ -44,7 +46,7 @@ export default function useTableResultColumnFilter({
           className="ml-[3px] flex items-center gap-1 border-neutral-300 bg-neutral-200 dark:border-neutral-700 dark:bg-neutral-800"
         >
           <LucideSettings2 className="h-3 w-4" />
-          Columns
+          {t("query.columns")}
           {!!columnFilterBadge && (
             <span className="transform-y-[-2px] text-secondary text-secondary-foreground ml-1 h-4 w-4 rounded-[1px] border border-neutral-600 bg-neutral-700 text-[11px]">
               {columnFilterBadge}
@@ -54,7 +56,7 @@ export default function useTableResultColumnFilter({
       </PopoverTrigger>
       <PopoverContent className="p-0">
         <Command>
-          <CommandInput placeholder="Search column here" />
+          <CommandInput placeholder={t("query.searchColumn")} />
           {!!columnFilterBadge && (
             <>
               <button
@@ -64,7 +66,7 @@ export default function useTableResultColumnFilter({
                 className="hover:bg-secondary aria-selected:bg-accent aria-selected:text-accent-foreground relative mx-1 my-1 flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm font-semibold outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50"
               >
                 <ListChecks className="mr-2 h-4 w-4" />
-                Select all columns
+                {t("query.selectAllColumns")}
               </button>
               <CommandSeparator />
             </>

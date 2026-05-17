@@ -12,6 +12,7 @@ import { useSchema } from "@/context/schema-provider";
 import { DatabaseSchemaItem } from "@/drivers/base-driver";
 import { Check, Spinner, Table, Trash, XCircle } from "@phosphor-icons/react";
 import { ReactElement, useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Toolbar, ToolbarButton } from "../toolbar";
 
 function ConfirmDialog({
@@ -24,6 +25,7 @@ function ConfirmDialog({
   onConfirm: () => void;
 }) {
   const [confirmText, setConfirmText] = useState("");
+  const { t } = useTranslation();
 
   return (
     <Dialog
@@ -33,10 +35,10 @@ function ConfirmDialog({
       }}
     >
       <DialogContent>
-        <DialogTitle>Are you sure?</DialogTitle>
+        <DialogTitle>{t("massDropTable.confirmTitle")}</DialogTitle>
 
         <div className="text-sm">
-          You are about to drop the following tables.
+          {t("massDropTable.confirmDesc")}
           <div className="my-2 flex flex-wrap gap-2 font-mono">
             {selectedItems.map((t) => (
               <div className="bg-muted rounded p-1" key={t.name}>
@@ -47,10 +49,10 @@ function ConfirmDialog({
           <p className="text-primary my-2 mt-8 font-serif text-2xl">
             ln(x) + e<sup>x-1</sup> - cos(x) = 0
           </p>
-          <p className="my-2">Solve this equaltion or type confirm</p>
+          <p className="my-2">{t("massDropTable.confirmSolve")}</p>
           <Input
             className="bg-surface"
-            placeholder="Type confirm"
+            placeholder={t("massDropTable.confirmPlaceholder")}
             value={confirmText}
             onKeyDown={(e) => {
               if (e.key === "Enter" && confirmText === "confirm") {
@@ -72,7 +74,7 @@ function ConfirmDialog({
               }
             }}
           >
-            Confirm
+            {t("massDropTable.confirm")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -85,6 +87,7 @@ export default function MassDropTableTab() {
   const { schema: initialSchema, currentSchemaName, refresh } = useSchema();
   const [schema] = useState(initialSchema);
   const [selectedSchema] = useState(currentSchemaName);
+  const { t } = useTranslation();
 
   const [selectedItems, setSelectedItems] = useState<DatabaseSchemaItem[]>([]);
   const [currentSchema, setCurrentSchema] = useState<DatabaseSchemaItem[]>([]);
@@ -127,28 +130,28 @@ export default function MassDropTableTab() {
       for (const item of items) {
         if (operationType === "drop") {
           try {
-            statusList = { ...statusList, [item.name]: "Dropping..." };
+            statusList = { ...statusList, [item.name]: t("massDropTable.statusDropping") };
             setItemStatusList(statusList);
 
             await databaseDriver.dropTable(currentSchemaName, item.name);
 
-            statusList = { ...statusList, [item.name]: "Dropped" };
+            statusList = { ...statusList, [item.name]: t("massDropTable.statusDropped") };
             setItemStatusList(statusList);
           } catch {
-            statusList = { ...statusList, [item.name]: "Failed" };
+            statusList = { ...statusList, [item.name]: t("massDropTable.statusFailed") };
             setItemStatusList(statusList);
           }
         } else if (operationType === "empty") {
           try {
-            statusList = { ...statusList, [item.name]: "Emptying..." };
+            statusList = { ...statusList, [item.name]: t("massDropTable.statusEmptying") };
             setItemStatusList(statusList);
 
             await databaseDriver.emptyTable(currentSchemaName, item.name);
 
-            statusList = { ...statusList, [item.name]: "Emptied" };
+            statusList = { ...statusList, [item.name]: t("massDropTable.statusEmptied") };
             setItemStatusList(statusList);
           } catch {
-            statusList = { ...statusList, [item.name]: "Failed" };
+            statusList = { ...statusList, [item.name]: t("massDropTable.statusFailed") };
             setItemStatusList(statusList);
           }
         }
@@ -157,16 +160,16 @@ export default function MassDropTableTab() {
       setCompleted(true);
       refresh();
     },
-    [operationType, currentSchemaName, databaseDriver, refresh]
+    [operationType, currentSchemaName, databaseDriver, refresh, t]
   );
 
   // How to render each row in the table
   const renderRowHandler = useCallback(
-    (t: DatabaseSchemaItem) => {
-      const status = itemStatusList[t.name] || "";
+    (item: DatabaseSchemaItem) => {
+      const status = itemStatusList[item.name] || "";
       let statusIcon: ReactElement | null = null;
 
-      if (status === "Failed")
+      if (status === t("massDropTable.statusFailed"))
         statusIcon = (
           <XCircle size={16} className="mr-2 inline-block text-red-500" />
         );
@@ -174,7 +177,10 @@ export default function MassDropTableTab() {
         statusIcon = (
           <Spinner size={16} className="mr-2 inline-block animate-spin" />
         );
-      else if (status === "Dropped" || status === "Emptied")
+      else if (
+        status === t("massDropTable.statusDropped") ||
+        status === t("massDropTable.statusEmptied")
+      )
         statusIcon = (
           <Check size={16} className="mr-2 inline-block text-green-500" />
         );
@@ -183,10 +189,10 @@ export default function MassDropTableTab() {
         <>
           <td className="h-[40px] w-[300px] border-b px-2 py-2">
             <Table size={16} className="mr-2 inline-block" />
-            {t.name}
+            {item.name}
           </td>
           <td className="h-[40px] w-[100px] border-b px-2 py-2 capitalize">
-            {t.type}
+            {item.type}
           </td>
           <td className="h-[40px] border-b px-2 py-2">
             {statusIcon}
@@ -195,10 +201,10 @@ export default function MassDropTableTab() {
         </>
       );
     },
-    [itemStatusList]
+    [itemStatusList, t]
   );
 
-  const extractItemKey = useCallback((t: DatabaseSchemaItem) => t.name, []);
+  const extractItemKey = useCallback((item: DatabaseSchemaItem) => item.name, []);
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
@@ -218,7 +224,7 @@ export default function MassDropTableTab() {
 
       <div className="border-b pb-1">
         <h1 className="text-primary mb-1 border-b p-4 text-lg font-semibold">
-          Drop & Empty Multiple Tables
+          {t("massDropTable.title")}
         </h1>
 
         <div className="px-1">
@@ -226,12 +232,12 @@ export default function MassDropTableTab() {
             <ToolbarButton
               disabled={selectedItems.length === 0 || completed}
               icon={<Trash size={16} className="text-red-500" />}
-              text="Drop Selected Table"
+              text={t("massDropTable.dropSelected")}
               onClick={dropSelectedTableClicked}
               destructive
             />
             <ToolbarButton
-              text="Empty Selected Table"
+              text={t("massDropTable.emptySelected")}
               disabled={selectedItems.length === 0 || completed}
               onClick={emptySelectedTableClicked}
               destructive
@@ -243,9 +249,9 @@ export default function MassDropTableTab() {
       <div className="relative flex-1 overflow-scroll">
         <SelectableTable
           headers={[
-            { key: "name", text: "Name", width: "300px" },
-            { key: "type", text: "Type", width: "100px" },
-            { key: "status", text: "" },
+            { key: "name", text: t("massDropTable.colName"), width: "300px" },
+            { key: "type", text: t("massDropTable.colType"), width: "100px" },
+            { key: "status", text: t("massDropTable.colStatus") },
           ]}
           items={currentSchema}
           extractKey={extractItemKey}

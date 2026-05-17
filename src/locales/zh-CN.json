@@ -72,7 +72,15 @@
     "unsavedQuery": "未保存的查询",
     "unnamedQuery": "未命名查询",
     "namePlaceholder": "请命名您的查询",
-    "saveWhere": "要保存到哪里？"
+    "saveWhere": "要保存到哪里？",
+    "errorTokenize": "SQL 解析失败",
+    "errorFillPlaceholders": "请填写所有变量占位符",
+    "variables": "变量",
+    "variablePlaceholder": "请填写变量值",
+    "variableHelp": "用 '' 表示空字符串；数字值会自动识别为数值类型；如需强制字符串类型，请用单引号包裹。",
+    "columns": "列",
+    "searchColumn": "搜索列名...",
+    "selectAllColumns": "全选所有列"
   },
   "tableEditor": {
     "columnName": "列名",
@@ -164,6 +172,24 @@
     "dropEmptyTables": "批量清空/删除表",
     "exploreTableData": "浏览表数据",
     "editTable": "编辑表结构"
+  },
+  "massDropTable": {
+    "title": "批量清空/删除表",
+    "dropSelected": "删除选中的表",
+    "emptySelected": "清空选中的表",
+    "confirmTitle": "确认操作",
+    "confirmDesc": "您即将删除以下数据表：",
+    "confirmSolve": "解以下方程，或输入 confirm 以继续",
+    "confirmPlaceholder": "输入 confirm",
+    "confirm": "确认",
+    "colName": "名称",
+    "colType": "类型",
+    "colStatus": "状态",
+    "statusDropping": "删除中...",
+    "statusDropped": "已删除",
+    "statusEmptying": "清空中...",
+    "statusEmptied": "已清空",
+    "statusFailed": "失败"
   },
   "export": {
     "title": "导出",
