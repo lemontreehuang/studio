@@ -3,11 +3,18 @@ import { BaseDriver } from "@/drivers/base-driver";
 import { useMemo } from "react";
 import useSWR, { mutate } from "swr";
 
+export type AgentProvider = "openai" | "deepseek";
+
 export interface LocalAgentType {
-  provider: "openai";
-  model: "gpt-4o-mini";
+  provider: AgentProvider;
+  model: string;
   token: string;
 }
+
+export const PROVIDER_MODELS: Record<AgentProvider, string[]> = {
+  openai: ["gpt-4o-mini", "gpt-4o"],
+  deepseek: ["deepseek-chat", "deepseek-coder"],
+};
 
 export function getAgentFromLocalStorage(): LocalAgentType | undefined {
   if (typeof window === "undefined") return undefined;
@@ -20,8 +27,8 @@ export function getAgentFromLocalStorage(): LocalAgentType | undefined {
   const agentData: LocalAgentType = JSON.parse(agentRawData);
 
   // Validate the data
-  if (agentData.provider !== "openai") return undefined;
-  if (agentData.model !== "gpt-4o-mini") return undefined;
+  if (!agentData.provider || !["openai", "deepseek"].includes(agentData.provider)) return undefined;
+  if (!agentData.model) return undefined;
   if (!agentData.token) return undefined;
 
   return agentData;
@@ -40,6 +47,6 @@ export function useAvailableAIAgents(databaseDriver?: BaseDriver | null) {
 
   return useMemo(() => {
     if (!databaseDriver) return undefined;
-    return new AgentDriverList(databaseDriver, agentConfig?.token);
+    return new AgentDriverList(databaseDriver, agentConfig);
   }, [databaseDriver, agentConfig]);
 }

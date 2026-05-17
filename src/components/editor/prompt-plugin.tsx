@@ -53,7 +53,7 @@ class PlaceholderWidget extends WidgetType {
     const wrap = document.createElement("span");
     wrap.className = "cm-placeholder";
     wrap.style.padding = "";
-    wrap.append(document.createTextNode("⌘ + B to get AI assistant"));
+    wrap.append(document.createTextNode("⌘ + B 唤起 AI 助手"));
     return wrap;
   }
 
@@ -312,7 +312,7 @@ function getCursorTooltips(
           const editButton = document.createElement("button");
           editButton.className =
             "bg-muted text-secondary-foreground text-sm p-1 px-2 cursor-pointer";
-          editButton.innerHTML = "Edit <span>⌘B</span>";
+          editButton.innerHTML = "编辑 <span>⌘B</span>";
 
           editButton.onclick = () => {
             plugin.openPrompt(plugin.getEditorView()!);

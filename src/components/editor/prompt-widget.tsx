@@ -4,6 +4,7 @@ import AgentDriverList from "@/drivers/agent/list";
 import { cn } from "@/lib/utils";
 import { Check, X } from "@phosphor-icons/react";
 import { useCallback, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { CloudflareIcon } from "../icons/outerbase-icon";
 import { Button } from "../orbit/button";
 import {
@@ -52,6 +53,7 @@ export function CodeMirrorPromptWidget({
   const [height, setHeight] = useState(60);
   const [prompt, setPrompt] = useState("");
   const cancelTriggered = useRef(false);
+  const { t } = useTranslation();
 
   const minHeight = 60;
 
@@ -152,7 +154,7 @@ export function CodeMirrorPromptWidget({
           />
           <textarea
             ref={textareaRef}
-            placeholder="Editing instruction"
+            placeholder={t("ai.editInstruction")}
             autoFocus
             className={cn(
               textareaClassName,
@@ -196,25 +198,25 @@ export function CodeMirrorPromptWidget({
             loading={loading}
             onClick={triggerSubmit}
           >
-            {previousPrompt ? "⌘↵ Submit Edit" : "⌘ Submit"}
+            {previousPrompt ? t("ai.submitEdit") : t("ai.submit")}
           </Button>
         )}
 
         {showAcceptButton && (
           <Button variant="primary" size="sm" onClick={onAccept}>
-            Accept
+            {t("ai.accept")}
           </Button>
         )}
 
         {previousPrompt && !loading && (
           <Button variant="ghost" size="sm" onClick={triggerReject}>
-            ⌘⌫ Reject
+            ⌘⌫ {t("ai.reject")}
           </Button>
         )}
 
         {loading && (
           <Button variant="ghost" size="sm" onClick={triggerCancel}>
-            ⌘⌫ Cancel
+            ⌘⌫ {t("ai.cancel")}
           </Button>
         )}
 
@@ -254,7 +256,7 @@ export function CodeMirrorPromptWidget({
                       {agent.free ? (
                         <div className="flex flex-1 justify-end">
                           <span className="bg-secondary text-secondary-foreground rounded px-2 text-sm">
-                            free tier
+                            {t("ai.freeTier")}
                           </span>
                         </div>
                       ) : null}
@@ -268,7 +270,7 @@ export function CodeMirrorPromptWidget({
 
         {!previousPrompt && !loading ? (
           <span className="text-muted-foreground ml-2 text-sm">
-            Esc to close
+            Esc {t("ai.toClose")}
           </span>
         ) : null}
       </div>

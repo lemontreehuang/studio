@@ -123,6 +123,26 @@
     "recentConnections": "Recent Connections",
     "localFile": "Local File"
   },
+  "settings": {
+    "localSettingDesc": "Provide an API key to enable the AI assistant. Your key is stored locally and never sent to our servers.",
+    "token": "Auth Token",
+    "aiConfig": "AI Assistant Settings",
+    "aiConfigDesc": "Select your AI model provider and enter your API key. Keys are stored locally in your browser only.",
+    "provider": "Provider",
+    "model": "Model",
+    "apiKey": "API Key",
+    "apiKeyPlaceholder": "Enter API key"
+  },
+  "ai": {
+    "editInstruction": "Enter editing instruction...",
+    "submit": "⌘ Submit",
+    "submitEdit": "⌘↵ Submit Edit",
+    "accept": "Accept",
+    "reject": "Reject",
+    "cancel": "Cancel",
+    "freeTier": "free tier",
+    "toClose": "to close"
+  },
   "export": {
     "title": "Export Data",
     "format": "Export Format",

@@ -140,7 +140,23 @@
   },
   "settings": {
     "localSettingDesc": "提供 OpenAI Token 以启用 AI 助手。您的 Token 将保存在本地，我们不会在服务器端保存。",
-    "token": "认证令牌"
+    "token": "认证令牌",
+    "aiConfig": "AI 助手配置",
+    "aiConfigDesc": "选择 AI 模型提供商并输入 API 密钥。您的密钥仅保存在本地浏览器中，不会上传到任何服务器。",
+    "provider": "模型提供商",
+    "model": "模型",
+    "apiKey": "API 密钥",
+    "apiKeyPlaceholder": "输入 API 密钥"
+  },
+  "ai": {
+    "editInstruction": "输入编辑指令...",
+    "submit": "⌘ 提交",
+    "submitEdit": "⌘↵ 提交修改",
+    "accept": "采纳",
+    "reject": "拒绝",
+    "cancel": "取消",
+    "freeTier": "免费",
+    "toClose": "关闭"
   },
   "export": {
     "title": "导出",

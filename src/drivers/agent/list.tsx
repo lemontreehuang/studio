@@ -1,9 +1,11 @@
 import { CloudflareIcon } from "@/components/icons/outerbase-icon";
+import { LocalAgentType } from "@/lib/ai-agent-storage";
 import { ReactElement } from "react";
 import { BaseDriver } from "../base-driver";
 import { AgentBaseDriver, AgentPromptOption } from "./base";
 import { ChatGPTDriver } from "./chatgpt";
 import CloudflareAgentDriver from "./cloudflare";
+import { DeepSeekDriver } from "./deepseek";
 
 interface AgentDriverListItem {
   name: string;
@@ -23,7 +25,7 @@ export default class AgentDriverList {
   protected dict: Record<string, AgentBaseDriver | undefined> = {};
   protected defaultModelName: string | undefined;
 
-  constructor(databaseDriver: BaseDriver, token?: string) {
+  constructor(databaseDriver: BaseDriver, agentConfig?: LocalAgentType) {
     this.dict = {
       "llama-3.3-70b": new CloudflareAgentDriver(
         databaseDriver,
@@ -34,11 +36,24 @@ export default class AgentDriverList {
         databaseDriver,
         "@cf/defog/sqlcoder-7b-2"
       ),
-
-      "gpt-4o mini": token
-        ? new ChatGPTDriver(databaseDriver, token)
-        : undefined,
     };
+
+    // Register OpenAI driver if configured
+    if (agentConfig?.provider === "openai" && agentConfig.token) {
+      this.dict[agentConfig.model || "gpt-4o-mini"] = new ChatGPTDriver(
+        databaseDriver,
+        agentConfig.token
+      );
+    }
+
+    // Register DeepSeek driver if configured
+    if (agentConfig?.provider === "deepseek" && agentConfig.token) {
+      this.dict[agentConfig.model || "deepseek-chat"] = new DeepSeekDriver(
+        databaseDriver,
+        agentConfig.token,
+        agentConfig.model || "deepseek-chat"
+      );
+    }
 
     this.defaultModelName =
       localStorage.getItem("default-agent-model") ?? DEFAULT_FREE_TIER_MODEL;
@@ -50,11 +65,11 @@ export default class AgentDriverList {
   }
 
   getDefaultModelName(): string {
-    return this.defaultModelName || "gemma-2b-it-lora";
+    return this.defaultModelName || DEFAULT_FREE_TIER_MODEL;
   }
 
   list(): AgentDriverListGroup[] {
-    return [
+    const groups: AgentDriverListGroup[] = [
       {
         name: "cloudflare",
         title: (
@@ -77,14 +92,48 @@ export default class AgentDriverList {
           },
         ],
       },
-      {
-        name: "other",
-        title: "Bring your own model",
-        agents: [
-          { name: "gpt-4o mini", available: !!this.dict["gpt-4o mini"] },
-        ],
-      },
     ];
+
+    // Check for user-configured BYOK models
+    const byokAgents: AgentDriverListItem[] = [];
+
+    // Add any OpenAI models
+    if (this.dict["gpt-4o-mini"]) {
+      byokAgents.push({
+        name: "gpt-4o-mini",
+        available: true,
+      });
+    }
+    if (this.dict["gpt-4o"]) {
+      byokAgents.push({
+        name: "gpt-4o",
+        available: true,
+      });
+    }
+
+    // Add any DeepSeek models
+    if (this.dict["deepseek-chat"]) {
+      byokAgents.push({
+        name: "deepseek-chat",
+        available: true,
+      });
+    }
+    if (this.dict["deepseek-coder"]) {
+      byokAgents.push({
+        name: "deepseek-coder",
+        available: true,
+      });
+    }
+
+    if (byokAgents.length > 0) {
+      groups.push({
+        name: "byok",
+        title: "自定义模型 (BYOK)",
+        agents: byokAgents,
+      });
+    }
+
+    return groups;
   }
 
   async run(
