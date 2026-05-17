@@ -64,9 +64,8 @@ export default function SidebarTab({ tabs }: Readonly<SidebarTabProps>) {
               <div
                 className="m-1 mb-2 flex h-[120px] w-[250px] flex-col justify-end rounded"
                 style={{
-                  background: "url(/outerbase-banner.jpg)",
-                  backgroundPosition: "center",
-                  backgroundSize: "cover",
+                  background:
+                    "linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%)",
                 }}
               >
                 <div
@@ -105,7 +104,7 @@ export default function SidebarTab({ tabs }: Readonly<SidebarTabProps>) {
               <DropdownMenuItem inset>
                 <Link
                   className="block w-full"
-                  href="https://www.outerbase.com/about/"
+                  href="https://github.com/outerbase/studio"
                   target="_blank"
                 >
                   {t("sidebar.aboutUs")}

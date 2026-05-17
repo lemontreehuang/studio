@@ -102,7 +102,21 @@
     "copySuccess": "成功复制创建脚本",
     "tableName": "表名",
     "tableNamePlaceholder": "表名",
-    "schema": "Schema"
+    "schema": "Schema",
+    "colName": "列名",
+    "colType": "类型",
+    "colDefault": "默认值",
+    "colNullable": "可空",
+    "colConstraint": "约束",
+    "colCollation": "排序规则",
+    "addColumnBtn": "添加列",
+    "selectDatatype": "选择数据类型",
+    "constraintLabel": "约束",
+    "constraintPrimaryKey": "主键",
+    "constraintUnique": "唯一",
+    "constraintCheck": "检查约束",
+    "constraintForeignKey": "外键",
+    "constraintVirtual": "虚拟列"
   },
   "connection": {
     "title": "连接管理",
@@ -191,6 +205,10 @@
     "loadingDatabase": "正在加载数据库",
     "pleaseWait": "请稍候，正在下载：",
     "editing": "正在编辑",
-    "open": "打开"
+    "open": "打开",
+    "permissionRequired": "需要文件访问权限",
+    "permissionRequiredDescription": "您上次打开的文件需要重新授权才能访问。请点击下方按钮以授予访问权限。",
+    "grantAccess": "授予访问权限",
+    "permissionDenied": "文件访问权限被拒绝"
   }
 }

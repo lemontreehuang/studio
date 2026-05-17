@@ -20,6 +20,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { LucidePlus, LucideTrash2 } from "lucide-react";
 import { Dispatch, SetStateAction, useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -105,6 +106,7 @@ function ColumnItemType({
   disabled?: boolean;
 }) {
   const { databaseDriver } = useStudioContext();
+  const { t } = useTranslation();
 
   if (
     databaseDriver.columnTypeSelector.type === "dropdown" &&
@@ -121,7 +123,7 @@ function ColumnItemType({
         disabled={disabled}
       >
         <SelectTrigger className="rounded-none border-0 bg-inherit text-sm shadow-none">
-          <SelectValue placeholder="Select datatype" />
+          <SelectValue placeholder={t("schemaEditor.selectDatatype")} />
         </SelectTrigger>
         <SelectContent>
           {databaseDriver.columnTypeSelector.dropdownOptions.map((option) => (
@@ -158,6 +160,7 @@ function ColumnItem({
   disabledEditExistingColumn?: boolean;
   options: SchemaEditorOptions;
 }) {
+  const { t } = useTranslation();
   const {
     setNodeRef,
     attributes,
@@ -295,7 +298,7 @@ function ColumnItem({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              <DropdownMenuLabel>Constraint</DropdownMenuLabel>
+              <DropdownMenuLabel>{t("schemaEditor.constraintLabel")}</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 inset
@@ -304,7 +307,7 @@ function ColumnItem({
                   change({ constraint: { primaryKey: true } });
                 }}
               >
-                Primary Key
+                {t("schemaEditor.constraintPrimaryKey")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 inset
@@ -313,7 +316,7 @@ function ColumnItem({
                   change({ constraint: { unique: true } });
                 }}
               >
-                Unique
+                {t("schemaEditor.constraintUnique")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 inset
@@ -326,7 +329,7 @@ function ColumnItem({
                   });
                 }}
               >
-                Check Constraint
+                {t("schemaEditor.constraintCheck")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 inset
@@ -339,7 +342,7 @@ function ColumnItem({
                   });
                 }}
               >
-                Foreign Key
+                {t("schemaEditor.constraintForeignKey")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 inset
@@ -353,7 +356,7 @@ function ColumnItem({
                   });
                 }}
               >
-                Virtuality
+                {t("schemaEditor.constraintVirtual")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -403,6 +406,7 @@ export default function SchemaEditorColumnList({
   disabledEditExistingColumn?: boolean;
   options: SchemaEditorOptions;
 }>) {
+  const { t } = useTranslation();
   const headerStyle = "text-xs p-2 text-left bg-secondary border";
 
   const handleDragEnd = useCallback(
@@ -453,14 +457,14 @@ export default function SchemaEditorColumnList({
           <thead>
             <tr>
               <td className={cn(headerStyle, "w-[20px]")}></td>
-              <th className={cn(headerStyle, "w-[100px]")}>Name</th>
-              <th className={cn(headerStyle, "w-[150px]")}>Type</th>
-              <th className={cn(headerStyle, "w-[150px]")}>Default</th>
-              <th className={cn(headerStyle, "w-[50px]")}>Null</th>
-              <th className={cn(headerStyle)}>Constraint</th>
+              <th className={cn(headerStyle, "w-[100px]")}>{t("schemaEditor.colName")}</th>
+              <th className={cn(headerStyle, "w-[150px]")}>{t("schemaEditor.colType")}</th>
+              <th className={cn(headerStyle, "w-[150px]")}>{t("schemaEditor.colDefault")}</th>
+              <th className={cn(headerStyle, "w-[50px]")}>{t("schemaEditor.colNullable")}</th>
+              <th className={cn(headerStyle)}>{t("schemaEditor.colConstraint")}</th>
 
               {options.collations.length > 0 && (
-                <th className={cn(headerStyle, "w-[160px]")}>Collation</th>
+                <th className={cn(headerStyle, "w-[160px]")}>{t("schemaEditor.colCollation")}</th>
               )}
 
               <th className={cn(headerStyle, "w-[30px]")}></th>
@@ -488,7 +492,7 @@ export default function SchemaEditorColumnList({
             <tr>
               <td colSpan={headerCounter} className="border px-4 py-2">
                 <Button size="sm" onClick={onAddColumn}>
-                  <LucidePlus className="mr-1 h-4 w-4" /> Add Column
+                  <LucidePlus className="mr-1 h-4 w-4" /> {t("schemaEditor.addColumnBtn")}
                 </Button>
               </td>
             </tr>

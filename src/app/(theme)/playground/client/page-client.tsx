@@ -45,6 +45,8 @@ export default function PlaygroundEditorBody({
 
   const [handler, setHandler] = useState<FileSystemFileHandle>();
   const [fileName, setFilename] = useState("");
+  const [pendingPermissionHandler, setPendingPermissionHandler] =
+    useState<FileSystemFileHandle>();
 
   const agentDriver = useAvailableAIAgents(driver);
 
@@ -132,9 +134,13 @@ export default function PlaygroundEditorBody({
         const sessionId = searchParams.get("s");
         if (!sessionId) return;
 
-        loadDatabaseFileHandlerFromSessionId(sessionId).then((handler) => {
-          if (handler) {
-            setHandler(handler);
+        loadDatabaseFileHandlerFromSessionId(sessionId).then((result) => {
+          if (!result) return;
+          if (result.needsPermission) {
+            // Permission must be requested via user gesture — show a prompt button.
+            setPendingPermissionHandler(result.handler);
+          } else {
+            setHandler(result.handler);
           }
         });
       } else {
@@ -256,7 +262,49 @@ export default function PlaygroundEditorBody({
     return new StudioExtensionManager(createSQLiteExtensions());
   }, []);
 
+  /**
+   * Called when the user clicks "Grant Access" after a session restore.
+   * requestPermission() must run inside a user-gesture (click) handler.
+   */
+  const onGrantPermission = useCallback(async () => {
+    if (!pendingPermissionHandler) return;
+    try {
+      const result = await pendingPermissionHandler.requestPermission({
+        mode: "readwrite",
+      });
+      if (result === "granted") {
+        setHandler(pendingPermissionHandler);
+        setPendingPermissionHandler(undefined);
+      } else {
+        toast.error(t("playground.permissionDenied"));
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error(t("playground.permissionDenied"));
+    }
+  }, [pendingPermissionHandler, t]);
+
   const dom = useMemo(() => {
+    if (pendingPermissionHandler) {
+      return (
+        <div className="flex h-full flex-col items-center justify-center gap-4 p-8">
+          <LucideFile className="h-12 w-12 text-yellow-500" />
+          <h1 className="text-2xl font-bold">
+            {t("playground.permissionRequired")}
+          </h1>
+          <p className="text-center text-sm text-gray-500">
+            {t("playground.permissionRequiredDescription")}
+          </p>
+          <button
+            onClick={onGrantPermission}
+            className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+          >
+            {t("playground.grantAccess")}
+          </button>
+        </div>
+      );
+    }
+
     if (databaseLoading) {
       return (
         <div className="p-4">
@@ -285,7 +333,16 @@ export default function PlaygroundEditorBody({
     }
 
     return <div></div>;
-  }, [databaseLoading, preloadDatabase, driver, extensions, agentDriver]);
+  }, [
+    databaseLoading,
+    preloadDatabase,
+    driver,
+    extensions,
+    agentDriver,
+    pendingPermissionHandler,
+    onGrantPermission,
+    t,
+  ]);
 
   return (
     <>
@@ -337,11 +394,18 @@ export default function PlaygroundEditorBody({
 
 /**
  * Returns the file handler from the session id if it exists. Otherwise, it will return undefined.
+ * NOTE: This function intentionally does NOT call requestPermission() because that requires a
+ * user gesture. Instead it returns a { handler, needsPermission } object so the caller can
+ * prompt the user at the right time.
  *
  * @param sessionId
- * @returns
  */
-async function loadDatabaseFileHandlerFromSessionId(sessionId: string) {
+async function loadDatabaseFileHandlerFromSessionId(
+  sessionId: string
+): Promise<
+  | { handler: FileSystemFileHandle; needsPermission: boolean }
+  | undefined
+> {
   const session = await localDb.connection.get(sessionId);
   if (!session) return;
 
@@ -350,12 +414,10 @@ async function loadDatabaseFileHandlerFromSessionId(sessionId: string) {
 
   const sessionData = await localDb.file_handler.get(fileHandlerId);
   if (sessionData?.handler) {
-    const permission = await sessionData.handler.queryPermission();
-    if (permission !== "granted") {
-      await sessionData.handler.requestPermission();
-      return sessionData.handler;
-    } else {
-      return sessionData.handler;
-    }
+    const permission = await sessionData.handler.queryPermission({ mode: "readwrite" });
+    return {
+      handler: sessionData.handler,
+      needsPermission: permission !== "granted",
+    };
   }
 }

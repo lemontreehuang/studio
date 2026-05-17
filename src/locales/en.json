@@ -81,6 +81,30 @@
     "commitChanges": "Commit Changes",
     "noChanges": "No Changes"
   },
+  "schemaEditor": {
+    "discardChange": "Discard Changes",
+    "addColumn": "Add Column",
+    "sqlPreview": "SQL Preview",
+    "createScript": "Create Script",
+    "copySuccess": "Create script copied successfully",
+    "tableName": "Table Name",
+    "tableNamePlaceholder": "Table name",
+    "schema": "Schema",
+    "colName": "Name",
+    "colType": "Type",
+    "colDefault": "Default",
+    "colNullable": "Null",
+    "colConstraint": "Constraint",
+    "colCollation": "Collation",
+    "addColumnBtn": "Add Column",
+    "selectDatatype": "Select datatype",
+    "constraintLabel": "Constraint",
+    "constraintPrimaryKey": "Primary Key",
+    "constraintUnique": "Unique",
+    "constraintCheck": "Check Constraint",
+    "constraintForeignKey": "Foreign Key",
+    "constraintVirtual": "Virtuality"
+  },
   "connection": {
     "title": "Connection Manager",
     "newConnection": "New Connection",
@@ -111,5 +135,15 @@
     "undo": "Undo",
     "redo": "Redo",
     "toggleSidebar": "Toggle Sidebar"
+  },
+  "playground": {
+    "loadingDatabase": "Loading database",
+    "pleaseWait": "Please wait, downloading:",
+    "editing": "Editing",
+    "open": "Open",
+    "permissionRequired": "File Permission Required",
+    "permissionRequiredDescription": "The file from your last session needs re-authorization. Click the button below to grant access.",
+    "grantAccess": "Grant Access",
+    "permissionDenied": "File access permission was denied"
   }
 }

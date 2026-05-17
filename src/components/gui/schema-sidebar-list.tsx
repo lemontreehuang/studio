@@ -41,8 +41,6 @@ function prepareListViewItem(
     let icon = Table;
     let iconClassName = "";
 
-    console.log("ss", s);
-
     if (s.type === "trigger") {
       icon = LucideCog;
       iconClassName = "text-purple-500";
