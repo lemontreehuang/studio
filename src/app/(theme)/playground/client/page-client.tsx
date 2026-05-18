@@ -27,6 +27,51 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Database, SqlJsStatic } from "sql.js";
 
+function useWebLock(lockName: string | undefined) {
+  const [lockError, setLockError] = useState(false);
+
+  useEffect(() => {
+    if (!lockName) {
+      setLockError(false);
+      return;
+    }
+
+    let isMounted = true;
+    let releaseLock: (() => void) | undefined;
+
+    const promise = new Promise<void>((resolve) => {
+      releaseLock = resolve;
+    });
+
+    if (typeof navigator !== "undefined" && navigator.locks) {
+      navigator.locks.request(lockName, { mode: "exclusive", ifAvailable: true }, async (lock) => {
+        if (!isMounted) {
+          if (releaseLock) releaseLock();
+          return;
+        }
+        
+        if (!lock) {
+          setLockError(true);
+          return;
+        }
+        
+        setLockError(false);
+        // Wait forever until unmounted
+        await promise;
+      }).catch(console.error);
+    }
+
+    return () => {
+      isMounted = false;
+      if (releaseLock) {
+        releaseLock();
+      }
+    };
+  }, [lockName]);
+
+  return lockError;
+}
+
 const SQLITE_FILE_EXTENSIONS =
   ".db,.sdb,.sqlite,.db3,.s3db,.sqlite3,.sl3,.db2,.s2db,.sqlite2,.sl2";
 
@@ -49,6 +94,15 @@ export default function PlaygroundEditorBody({
     useState<FileSystemFileHandle>();
 
   const agentDriver = useAvailableAIAgents(driver);
+
+  const lockName = useMemo(() => {
+    const s = searchParams.get("s");
+    if (s) return `sqlite-session-${s}`;
+    if (fileName) return `sqlite-file-${fileName}`;
+    return undefined;
+  }, [searchParams, fileName]);
+
+  const lockError = useWebLock(lockName);
 
   /**
    * Initialize the SQL.js library.
@@ -285,6 +339,33 @@ export default function PlaygroundEditorBody({
   }, [pendingPermissionHandler, t]);
 
   const dom = useMemo(() => {
+    if (lockError) {
+      return (
+        <div className="flex h-full flex-col items-center justify-center gap-4 p-8">
+          <LucideFile className="h-12 w-12 text-red-500" />
+          <h1 className="text-2xl font-bold">
+            {t("playground.fileInUse", "文件已被其他窗口占用")}
+          </h1>
+          <p className="max-w-md text-center text-sm text-gray-500">
+            {t("playground.fileInUseDesc", "该数据库已在另一个标签页或窗口中打开。为了防止数据冲突和丢失，同一时间只能在一个窗口中操作。请先关闭另一个窗口。")}
+          </p>
+          <button
+            onClick={() => {
+              if (typeof BroadcastChannel !== "undefined") {
+                const bc = new BroadcastChannel("sqlite-lock-channel");
+                bc.postMessage("WAKE_UP_" + lockName);
+                bc.close();
+              }
+              window.location.href = "/local";
+            }}
+            className="mt-4 rounded bg-red-600 px-4 py-2 text-white hover:bg-red-700 transition-colors"
+          >
+            {t("playground.pingAndReturn", "呼叫原窗口并返回主页")}
+          </button>
+        </div>
+      );
+    }
+
     if (pendingPermissionHandler) {
       return (
         <div className="flex h-full flex-col items-center justify-center gap-4 p-8">
@@ -326,6 +407,14 @@ export default function PlaygroundEditorBody({
           color="gray"
           name="Playground"
           driver={driver}
+          onBack={() => {
+            if (driver && driver.hasChanged()) {
+              if (!confirm("您有未保存的更改。返回工作区将丢失所有修改。确定要返回吗？")) {
+                return;
+              }
+            }
+            window.location.href = "/local";
+          }}
           containerClassName="w-full h-full"
           agentDriver={agentDriver}
         />
@@ -334,6 +423,7 @@ export default function PlaygroundEditorBody({
 
     return <div></div>;
   }, [
+    lockError,
     databaseLoading,
     preloadDatabase,
     driver,
@@ -342,7 +432,50 @@ export default function PlaygroundEditorBody({
     pendingPermissionHandler,
     onGrantPermission,
     t,
+    lockName,
   ]);
+
+  useEffect(() => {
+    if (lockError || !lockName || typeof BroadcastChannel === "undefined") return;
+
+    const bc = new BroadcastChannel("sqlite-lock-channel");
+    let blinkInterval: ReturnType<typeof setInterval> | null = null;
+    let cachedTitle = document.title;
+    let isCurrentlyBlinking = false;
+
+    bc.onmessage = (event) => {
+      if (event.data === "WAKE_UP_" + lockName) {
+        if (blinkInterval) clearInterval(blinkInterval);
+        
+        if (!isCurrentlyBlinking) {
+          cachedTitle = document.title;
+          isCurrentlyBlinking = true;
+        }
+        
+        let isBlinking = false;
+        const startTime = Date.now();
+        
+        blinkInterval = setInterval(() => {
+          if (Date.now() - startTime > 8000) {
+            if (blinkInterval) clearInterval(blinkInterval);
+            document.title = cachedTitle;
+            isCurrentlyBlinking = false;
+            return;
+          }
+          isBlinking = !isBlinking;
+          document.title = isBlinking ? "【请看这里！】" : cachedTitle;
+        }, 500);
+      }
+    };
+
+    return () => {
+      bc.close();
+      if (blinkInterval) {
+        clearInterval(blinkInterval);
+        document.title = cachedTitle;
+      }
+    };
+  }, [lockError, lockName]);
 
   return (
     <>
