@@ -21,6 +21,8 @@ import {
   Save,
   Pin,
   PinOff,
+  CheckCircle2,
+  CircleDot,
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { generateId } from "@/lib/generate-id";
@@ -139,6 +141,7 @@ export default function PlaygroundEditorBody({
   const [pendingPermissionHandler, setPendingPermissionHandler] =
     useState<FileSystemFileHandle>();
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [lastSavedTime, setLastSavedTime] = useState<Date | null>(null);
 
   const agentDriver = useAvailableAIAgents(driver);
 
@@ -382,6 +385,7 @@ export default function PlaygroundEditorBody({
           }
           driver?.resetChange();
           setHasUnsavedChanges(false);
+          setLastSavedTime(new Date());
         } catch (err) {
           console.error(err);
           if (!silent) toast.error("Failed to save file.");
@@ -417,6 +421,7 @@ export default function PlaygroundEditorBody({
             );
             driver?.resetChange();
             setHasUnsavedChanges(false);
+            setLastSavedTime(new Date());
 
             // Option D: Prompt to add to dashboard
             if (confirm(t("playground.promptPinToDashboard", "文件已保存。是否将此数据库添加到主页列表以便日后快速访问？"))) {
@@ -648,12 +653,26 @@ export default function PlaygroundEditorBody({
             )}
 
             {driver && (
-              <ToolbarButton
-                text={t("common.save")}
-                onClick={onSaveClicked}
-                disabled={!hasUnsavedChanges}
-                icon={<Save className="h-4 w-4" />}
-              />
+              <div className="flex items-center">
+                <ToolbarButton
+                  text={t("common.save")}
+                  onClick={onSaveClicked}
+                  disabled={!hasUnsavedChanges}
+                  icon={<Save className="h-4 w-4" />}
+                />
+                {!hasUnsavedChanges && lastSavedTime && (
+                  <span className="ml-2 flex items-center gap-1 text-xs text-neutral-500">
+                    <CheckCircle2 className="h-3 w-3 text-green-500" />
+                    {t("playground.lastSavedAt", "已于")} {lastSavedTime.toLocaleTimeString()} {t("playground.savedToLocal", "保存到本地")}
+                  </span>
+                )}
+                {hasUnsavedChanges && (
+                  <span className="ml-2 flex items-center gap-1 text-xs text-orange-500">
+                    <CircleDot className="h-3 w-3" />
+                    {t("playground.unsavedChanges", "有未保存的更改")}
+                  </span>
+                )}
+              </div>
             )}
 
             <ToolbarButton
