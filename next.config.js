@@ -1,6 +1,14 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 const withMDX = require("@next/mdx")();
 const pkg = require("./package.json");
+const withSerwistInit = require("@serwist/next").default;
+
+const withSerwist = withSerwistInit({
+  swSrc: "src/app/sw.ts",
+  swDest: "public/sw.js",
+  disable: process.env.NODE_ENV === "development",
+  reloadOnOnline: false,
+});
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -20,4 +28,4 @@ const nextConfig = {
   },
 };
 
-module.exports = { ...withMDX(nextConfig), output: "standalone" };
+module.exports = withSerwist({ ...withMDX(nextConfig), output: "standalone" });

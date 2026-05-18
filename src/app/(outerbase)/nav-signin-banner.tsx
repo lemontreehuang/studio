@@ -4,6 +4,7 @@ export default function NavigationSigninBanner() {
   const { isLoading, session } = useSession();
 
   // 本地工具不需要云账号登录横幅 - 已隐藏
+  // eslint-disable-next-line no-constant-condition
   if (isLoading || !session || true) {
     return null;
   }

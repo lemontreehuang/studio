@@ -1,5 +1,5 @@
 import { WEBSITE_NAME } from "@/const";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 
 import "./codemirror-override.css";
 import "./globals.css";
@@ -8,6 +8,14 @@ const siteDescription = `${WEBSITE_NAME} 是一个功能完整、轻量级的 SQ
 
 import { DialogProvider } from "@/components/create-dialog";
 import I18nProvider from "@/components/i18n-provider";
+
+export const viewport: Viewport = {
+  themeColor: "#000000",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
 
 export const metadata: Metadata = {
   title: WEBSITE_NAME,
