@@ -138,6 +138,7 @@ export default function PlaygroundEditorBody({
   const [fileName, setFilename] = useState("");
   const [pendingPermissionHandler, setPendingPermissionHandler] =
     useState<FileSystemFileHandle>();
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   const agentDriver = useAvailableAIAgents(driver);
 
@@ -149,6 +150,17 @@ export default function PlaygroundEditorBody({
   }, [searchParams, fileName]);
 
   const lockError = useWebLock(lockName);
+
+  useEffect(() => {
+    if (!driver) return;
+    const timer = setInterval(() => {
+      const changed = driver.hasChanged();
+      if (changed !== hasUnsavedChanges) {
+        setHasUnsavedChanges(changed);
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [driver, hasUnsavedChanges]);
 
   /**
    * Initialize the SQL.js library.
@@ -364,11 +376,12 @@ export default function PlaygroundEditorBody({
           if (!silent) {
             toast.success(
               <div>
-                Successfully save <strong>{fileName}</strong>
+                {t("playground.savedSuccess", "保存成功：")} <strong>{fileName}</strong>
               </div>
             );
           }
           driver?.resetChange();
+          setHasUnsavedChanges(false);
         } catch (err) {
           console.error(err);
           if (!silent) toast.error("Failed to save file.");
@@ -399,10 +412,11 @@ export default function PlaygroundEditorBody({
             
             toast.success(
               <div>
-                Successfully save <strong>{newHandle.name}</strong>
+                {t("playground.savedSuccess", "保存成功：")} <strong>{newHandle.name}</strong>
               </div>
             );
             driver?.resetChange();
+            setHasUnsavedChanges(false);
 
             // Option D: Prompt to add to dashboard
             if (confirm(t("playground.promptPinToDashboard", "文件已保存。是否将此数据库添加到主页列表以便日后快速访问？"))) {
@@ -432,7 +446,13 @@ export default function PlaygroundEditorBody({
     [driver, fileName, handler, nativeDriver, t, pinToDashboard]
   );
 
-  const onSaveClicked = useCallback(() => performSave(false), [performSave]);
+  const onSaveClicked = useCallback(() => {
+    if (driver && !driver.hasChanged()) {
+      toast.info(t("playground.noChangesToSave", "没有需要保存的更改"));
+      return;
+    }
+    performSave(false);
+  }, [performSave, driver, t]);
 
   useEffect(() => {
     if (!autoSaveEnabled || !handler || !driver) return;
@@ -631,6 +651,7 @@ export default function PlaygroundEditorBody({
               <ToolbarButton
                 text={t("common.save")}
                 onClick={onSaveClicked}
+                disabled={!hasUnsavedChanges}
                 icon={<Save className="h-4 w-4" />}
               />
             )}
