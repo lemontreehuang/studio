@@ -272,7 +272,7 @@ export function ResourceItemList({
                       }}
                     >
                       <Trash size={16} className="mr-2" />
-                      {t("local.removeBase")}
+                      {t("local.unpin")}
                     </DropdownMenuItem>
                   </ResourceCard>
                 </motion.div>

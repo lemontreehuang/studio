@@ -19,8 +19,12 @@ import {
   LucideLoader,
   RefreshCcw,
   Save,
+  Pin,
+  PinOff,
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
+import { generateId } from "@/lib/generate-id";
+import { createLocalConnection, removeLocalConnection } from "@/app/(outerbase)/local/hooks";
 import Script from "next/script";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -84,9 +88,48 @@ export default function PlaygroundEditorBody({
 }) {
   const [sqlInit, setSqlInit] = useState<SqlJsStatic>();
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(false);
+  const [isPinned, setIsPinned] = useState(false);
+  const [connectionId, setConnectionId] = useState<string | null>(null);
   const searchParams = useSearchParams();
-  const [databaseLoading, setDatabaseLoading] = useState(!!preloadDatabase);
   const { t } = useTranslation();
+
+  const pinToDashboard = useCallback(async (fileHandler: FileSystemFileHandle) => {
+    try {
+      const id = generateId();
+      await localDb.file_handler.add({ id, handler: fileHandler });
+      const connection = await createLocalConnection({
+        name: fileHandler.name,
+        driver: "sqlite-filehandler",
+        file_handler: id,
+        label: "blue",
+      });
+      setIsPinned(true);
+      setConnectionId(connection.id);
+      toast.success(t("playground.pinnedSuccess", "已添加到主页列表"));
+    } catch (e) {
+      console.error(e);
+      toast.error(t("playground.pinFailed", "添加失败"));
+    }
+  }, [t]);
+
+  const unpinFromDashboard = useCallback(async () => {
+    const targetId = connectionId || searchParams.get("s");
+    if (!targetId) return;
+    try {
+      const conn = await localDb.connection.get(targetId);
+      if (conn && conn.content.file_handler) {
+        await localDb.file_handler.delete(conn.content.file_handler);
+      }
+      await removeLocalConnection(targetId);
+      setIsPinned(false);
+      setConnectionId(null);
+      toast.success(t("playground.unpinnedSuccess", "已从主页列表移除"));
+    } catch (e) {
+      console.error(e);
+      toast.error(t("playground.unpinFailed", "取消固定失败"));
+    }
+  }, [connectionId, searchParams, t]);
+  const [databaseLoading, setDatabaseLoading] = useState(!!preloadDatabase);
 
   const [nativeDriver, setNativeDriver] = useState<Database>();
   const [driver, setDriver] = useState<SqljsDriver>();
@@ -167,14 +210,24 @@ export default function PlaygroundEditorBody({
    */
   const onFileDrop = useCallback(
     (file?: File, fileHandler?: FileSystemFileHandle) => {
+      if (driver && driver.hasChanged()) {
+        if (!confirm(t("playground.unsavedWarning", "您有未保存的更改。打开新文件将丢失当前修改。确定要继续吗？"))) {
+          return;
+        }
+      }
+
       if (file) {
         loadDatabaseFromFile(file);
         setHandler(undefined);
+        setIsPinned(false);
+        setConnectionId(null);
       } else if (fileHandler) {
         setHandler(fileHandler);
+        setIsPinned(false);
+        setConnectionId(null);
       }
     },
-    [loadDatabaseFromFile]
+    [loadDatabaseFromFile, driver, t]
   );
 
   /**
@@ -198,6 +251,8 @@ export default function PlaygroundEditorBody({
             setPendingPermissionHandler(result.handler);
           } else {
             setHandler(result.handler);
+            setIsPinned(true);
+            setConnectionId(sessionId);
           }
         });
       } else {
@@ -249,6 +304,12 @@ export default function PlaygroundEditorBody({
    * If not, fallback to the traditional file input.
    */
   const onOpenClicked = useCallback(() => {
+    if (driver && driver.hasChanged()) {
+      if (!confirm(t("playground.unsavedWarning", "您有未保存的更改。打开新文件将丢失当前修改。确定要继续吗？"))) {
+        return;
+      }
+    }
+
     if (window.showOpenFilePicker) {
       window
         .showOpenFilePicker({
@@ -265,6 +326,8 @@ export default function PlaygroundEditorBody({
         })
         .then(([fileHandler]) => {
           setHandler(fileHandler);
+          setIsPinned(false);
+          setConnectionId(null);
         });
     } else {
       const input = document.createElement("input");
@@ -275,12 +338,14 @@ export default function PlaygroundEditorBody({
         if (file) {
           loadDatabaseFromFile(file);
           setHandler(undefined);
+          setIsPinned(false);
+          setConnectionId(null);
         }
       };
 
       input.click();
     }
-  }, [loadDatabaseFromFile]);
+  }, [loadDatabaseFromFile, driver, t]);
 
   /**
    * Save the database back to the file. Prioritize the new File System API if available.
@@ -310,6 +375,52 @@ export default function PlaygroundEditorBody({
         }
       } else {
         if (silent) return; // Do not auto-download
+
+        // Try to use modern File System Access API
+        if (window.showSaveFilePicker) {
+          try {
+            const newHandle = await window.showSaveFilePicker({
+              suggestedName: fileName || "sqlite-dump.db",
+              types: [
+                {
+                  description: "SQLite Database",
+                  accept: { "application/x-sqlite3": [".sqlite", ".db"] },
+                },
+              ],
+            });
+            const writable = await newHandle.createWritable();
+            await writable.write(nativeDriver.export());
+            await writable.close();
+            
+            setHandler(newHandle);
+            setFilename(newHandle.name);
+            setIsPinned(false);
+            setConnectionId(null);
+            
+            toast.success(
+              <div>
+                Successfully save <strong>{newHandle.name}</strong>
+              </div>
+            );
+            driver?.resetChange();
+
+            // Option D: Prompt to add to dashboard
+            if (confirm(t("playground.promptPinToDashboard", "文件已保存。是否将此数据库添加到主页列表以便日后快速访问？"))) {
+              pinToDashboard(newHandle);
+            }
+            
+            return;
+          } catch (err: any) {
+            // User cancelled the picker or other error
+            if (err.name !== 'AbortError') {
+              console.error(err);
+              toast.error("Failed to save file.");
+            }
+            return;
+          }
+        }
+
+        // Fallback to traditional download if API is not supported
         saveAs(
           new Blob([nativeDriver.export()], {
             type: "application/x-sqlite3",
@@ -318,7 +429,7 @@ export default function PlaygroundEditorBody({
         );
       }
     },
-    [driver, fileName, handler, nativeDriver]
+    [driver, fileName, handler, nativeDriver, t, pinToDashboard]
   );
 
   const onSaveClicked = useCallback(() => performSave(false), [performSave]);
@@ -533,6 +644,19 @@ export default function PlaygroundEditorBody({
             {handler && (
               <>
                 <ToolbarSeparator />
+                {isPinned ? (
+                  <ToolbarButton
+                    text={t("playground.unpinFromDashboard", "已固定到主页")}
+                    icon={<PinOff className="h-4 w-4 text-blue-500 fill-blue-500 dark:text-blue-400 dark:fill-blue-400" />}
+                    onClick={unpinFromDashboard}
+                  />
+                ) : (
+                  <ToolbarButton
+                    text={t("playground.pinToDashboard", "固定到主页")}
+                    icon={<Pin className="h-4 w-4" />}
+                    onClick={() => pinToDashboard(handler)}
+                  />
+                )}
                 <div className="flex items-center space-x-2 px-2 text-sm text-gray-700 dark:text-gray-300">
                   <Checkbox 
                     id="auto-save" 
