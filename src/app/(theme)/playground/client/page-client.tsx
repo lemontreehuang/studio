@@ -26,6 +26,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Database, SqlJsStatic } from "sql.js";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 function useWebLock(lockName: string | undefined) {
   const [lockError, setLockError] = useState(false);
@@ -81,6 +83,7 @@ export default function PlaygroundEditorBody({
   preloadDatabase?: string | null;
 }) {
   const [sqlInit, setSqlInit] = useState<SqlJsStatic>();
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(false);
   const searchParams = useSearchParams();
   const [databaseLoading, setDatabaseLoading] = useState(!!preloadDatabase);
   const { t } = useTranslation();
@@ -283,34 +286,54 @@ export default function PlaygroundEditorBody({
    * Save the database back to the file. Prioritize the new File System API if available.
    * If not, fallback to the traditional file download.
    */
-  const onSaveClicked = useCallback(() => {
-    if (!nativeDriver) return;
+  const performSave = useCallback(
+    async (silent = false) => {
+      if (!nativeDriver) return;
 
-    if (handler) {
-      // If the browser support FileSystemHandler, we save directly back to the file.
-      handler
-        .createWritable()
-        .then((writable) => {
-          writable.write(nativeDriver.export());
-          writable.close();
-          toast.success(
-            <div>
-              Successfully save <strong>{fileName}</strong>
-            </div>
-          );
+      if (handler) {
+        try {
+          const writable = await handler.createWritable();
+          await writable.write(nativeDriver.export());
+          await writable.close();
+          
+          if (!silent) {
+            toast.success(
+              <div>
+                Successfully save <strong>{fileName}</strong>
+              </div>
+            );
+          }
           driver?.resetChange();
-        })
-        .catch(console.error);
-    } else {
-      // Fallback to file download instead of direct file save.
-      saveAs(
-        new Blob([nativeDriver.export()], {
-          type: "application/x-sqlite3",
-        }),
-        "sqlite-dump.db"
-      );
-    }
-  }, [driver, fileName, handler, nativeDriver]);
+        } catch (err) {
+          console.error(err);
+          if (!silent) toast.error("Failed to save file.");
+        }
+      } else {
+        if (silent) return; // Do not auto-download
+        saveAs(
+          new Blob([nativeDriver.export()], {
+            type: "application/x-sqlite3",
+          }),
+          "sqlite-dump.db"
+        );
+      }
+    },
+    [driver, fileName, handler, nativeDriver]
+  );
+
+  const onSaveClicked = useCallback(() => performSave(false), [performSave]);
+
+  useEffect(() => {
+    if (!autoSaveEnabled || !handler || !driver) return;
+
+    const timer = setInterval(() => {
+      if (driver.hasChanged()) {
+        performSave(true);
+      }
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, [autoSaveEnabled, handler, driver, performSave]);
 
   const extensions = useMemo(() => {
     return new StudioExtensionManager(createSQLiteExtensions());
@@ -509,6 +532,17 @@ export default function PlaygroundEditorBody({
 
             {handler && (
               <>
+                <ToolbarSeparator />
+                <div className="flex items-center space-x-2 px-2 text-sm text-gray-700 dark:text-gray-300">
+                  <Checkbox 
+                    id="auto-save" 
+                    checked={autoSaveEnabled} 
+                    onCheckedChange={(checked) => setAutoSaveEnabled(!!checked)} 
+                  />
+                  <Label htmlFor="auto-save" className="cursor-pointer">
+                    {t("playground.autoSave", "自动保存")}
+                  </Label>
+                </div>
                 <ToolbarSeparator />
                 <ToolbarButton
                   text={t("common.refresh")}
