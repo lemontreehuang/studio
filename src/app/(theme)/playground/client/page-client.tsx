@@ -8,7 +8,7 @@ import {
 import ScreenDropZone from "@/components/screen-dropzone";
 import { StudioExtensionManager } from "@/core/extension-manager";
 import { createSQLiteExtensions } from "@/core/standard-extension";
-import SqljsDriver from "@/drivers/database/sqljs";
+import WaSqliteDriver from "@/drivers/database/wasqlite";
 import { localDb } from "@/indexdb";
 import { useAvailableAIAgents } from "@/lib/ai-agent-storage";
 import downloadFileFromUrl from "@/lib/download-file";
@@ -31,7 +31,9 @@ import Script from "next/script";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Database, SqlJsStatic } from "sql.js";
+import * as SQLite from "wa-sqlite";
+import SQLiteESMFactory from "wa-sqlite/dist/wa-sqlite.mjs";
+import { MemoryVFS } from "wa-sqlite/src/examples/MemoryVFS.js";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 
@@ -88,7 +90,8 @@ export default function PlaygroundEditorBody({
 }: {
   preloadDatabase?: string | null;
 }) {
-  const [sqlInit, setSqlInit] = useState<SqlJsStatic>();
+  const [sqlite3, setSqlite3] = useState<SQLiteAPI>();
+  const [vfs, setVfs] = useState<MemoryVFS>();
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
   const [connectionId, setConnectionId] = useState<string | null>(null);
@@ -133,8 +136,8 @@ export default function PlaygroundEditorBody({
   }, [connectionId, searchParams, t]);
   const [databaseLoading, setDatabaseLoading] = useState(!!preloadDatabase);
 
-  const [nativeDriver, setNativeDriver] = useState<Database>();
-  const [driver, setDriver] = useState<SqljsDriver>();
+  const [nativeDriver, setNativeDriver] = useState<number>();
+  const [driver, setDriver] = useState<WaSqliteDriver>();
 
   const [handler, setHandler] = useState<FileSystemFileHandle>();
   const [fileName, setFilename] = useState("");
@@ -166,28 +169,51 @@ export default function PlaygroundEditorBody({
   }, [driver, hasUnsavedChanges]);
 
   /**
-   * Initialize the SQL.js library.
+   * Initialize the wa-sqlite library.
    */
   const onReady = useCallback(() => {
-    window
-      .initSqlJs({
-        locateFile: (file) => `/sqljs/${file}`,
-      })
-      .then(setSqlInit);
+    SQLiteESMFactory({
+      locateFile: (file: string) => `/${file}`,
+    }).then((module) => {
+      const sqlite3 = SQLite.Factory(module);
+      const vfs = new MemoryVFS();
+      sqlite3.vfs_register(vfs as any, true);
+      setSqlite3(sqlite3);
+      setVfs(vfs);
+    });
   }, []);
+
+  // Make sure we initialize on mount
+  useEffect(() => {
+    onReady();
+  }, [onReady]);
 
   /**
    * Load the database from the buffer.
    */
   const loadDatabaseFromBuffer = useCallback(
-    (buffer: ArrayBuffer) => {
-      if (sqlInit) {
-        const sqljsDatabase = new sqlInit.Database(new Uint8Array(buffer));
-        setNativeDriver(sqljsDatabase);
-        setDriver(new SqljsDriver(sqljsDatabase));
+    async (buffer: ArrayBuffer) => {
+      if (sqlite3 && vfs) {
+        if (nativeDriver) {
+          try {
+             await sqlite3.close(nativeDriver);
+          } catch(e) {}
+        }
+        
+        const dbName = "db";
+        vfs.mapNameToFile.set(dbName, {
+          name: dbName,
+          flags: SQLite.SQLITE_OPEN_CREATE | SQLite.SQLITE_OPEN_READWRITE,
+          size: buffer.byteLength,
+          data: buffer,
+        });
+        
+        const db = await sqlite3.open_v2(dbName);
+        setNativeDriver(db);
+        setDriver(new WaSqliteDriver(sqlite3, db));
       }
     },
-    [sqlInit]
+    [sqlite3, vfs, nativeDriver]
   );
 
   /**
@@ -250,7 +276,7 @@ export default function PlaygroundEditorBody({
    * If no database source provided, we will create a new empty database.
    */
   useEffect(() => {
-    if (sqlInit) {
+    if (sqlite3 && vfs) {
       if (preloadDatabase) {
         downloadFileFromUrl(preloadDatabase)
           .then(loadDatabaseFromBuffer)
@@ -272,12 +298,20 @@ export default function PlaygroundEditorBody({
         });
       } else {
         // If no database is provided, we will create a new empty database.
-        const sqljsDatabase = new sqlInit.Database();
-        setNativeDriver(sqljsDatabase);
-        setDriver(new SqljsDriver(sqljsDatabase));
+        const dbName = "db";
+        vfs.mapNameToFile.set(dbName, {
+          name: dbName,
+          flags: SQLite.SQLITE_OPEN_CREATE | SQLite.SQLITE_OPEN_READWRITE,
+          size: 0,
+          data: new ArrayBuffer(0),
+        });
+        sqlite3.open_v2(dbName).then(db => {
+          setNativeDriver(db);
+          setDriver(new WaSqliteDriver(sqlite3, db));
+        });
       }
     }
-  }, [sqlInit, preloadDatabase, searchParams, loadDatabaseFromBuffer]);
+  }, [sqlite3, vfs, preloadDatabase, searchParams, loadDatabaseFromBuffer]);
 
   /**
    * Reload the database from the file handler.
@@ -368,12 +402,16 @@ export default function PlaygroundEditorBody({
    */
   const performSave = useCallback(
     async (silent = false) => {
-      if (!nativeDriver) return;
+      if (nativeDriver === undefined || !vfs) return;
+      
+      const file = vfs.mapNameToFile.get("db");
+      if (!file) return;
+      const exportData = new Uint8Array(file.data, 0, file.size);
 
       if (handler) {
         try {
           const writable = await handler.createWritable();
-          await writable.write(nativeDriver.export());
+          await writable.write(exportData);
           await writable.close();
           
           if (!silent) {
@@ -406,7 +444,7 @@ export default function PlaygroundEditorBody({
               ],
             });
             const writable = await newHandle.createWritable();
-            await writable.write(nativeDriver.export());
+            await writable.write(exportData);
             await writable.close();
             
             setHandler(newHandle);
@@ -441,14 +479,14 @@ export default function PlaygroundEditorBody({
 
         // Fallback to traditional download if API is not supported
         saveAs(
-          new Blob([nativeDriver.export()], {
+          new Blob([exportData], {
             type: "application/x-sqlite3",
           }),
           "sqlite-dump.db"
         );
       }
     },
-    [driver, fileName, handler, nativeDriver, t, pinToDashboard]
+    [driver, fileName, handler, nativeDriver, vfs, t, pinToDashboard]
   );
 
   const onSaveClicked = useCallback(() => {
@@ -638,7 +676,6 @@ export default function PlaygroundEditorBody({
 
   return (
     <>
-      <Script src="/sqljs/sql-wasm.js" onReady={onReady} />
       <ScreenDropZone onFileDrop={onFileDrop} />
       <div className="flex h-screen w-screen flex-col">
         <div className="border-b p-1">

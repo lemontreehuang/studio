@@ -98,6 +98,7 @@
     "tailwind-merge": "^2.2.2",
     "tailwindcss-animate": "^1.0.7",
     "use-immer": "^0.11.0",
+    "wa-sqlite": "^1.0.0",
     "xlsx": "^0.18.5",
     "zod": "^3.22.4"
   },
@@ -115,7 +116,6 @@
     "@types/react-color": "^3.0.13",
     "@types/react-dom": "^18",
     "@types/showdown": "^2.0.6",
-    "@types/sql.js": "^1.4.9",
     "@types/wicg-file-system-access": "^2023.10.5",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
