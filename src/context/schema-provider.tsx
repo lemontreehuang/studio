@@ -32,17 +32,21 @@ const SchemaContext = createContext<{
 
 function generateAutoCompleteFromSchemaItems(
   items?: DatabaseSchemaItem[]
-): Record<string, string[]> {
+): Record<string, any[]> {
   if (!items) return {};
 
   return items
     .filter((x) => x.type === "table" || x.type === "view")
     .reduce(
       (a, b) => {
-        a[b.name] = (b.tableSchema?.columns ?? []).map((c) => c.name);
+        a[b.name] = (b.tableSchema?.columns ?? []).map((c) => ({
+          label: c.name,
+          type: "property",
+          detail: c.type,
+        }));
         return a;
       },
-      {} as Record<string, string[]>
+      {} as Record<string, any[]>
     );
 }
 
