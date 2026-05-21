@@ -1,7 +1,6 @@
-import ClientOnly from "@/components/client-only";
 import { Metadata } from "next";
 import ThemeLayout from "../../theme_layout";
-import PlaygroundEditorBody from "./page-client";
+import PlaygroundEditorDynamic from "./page-client-dynamic";
 
 export const metadata: Metadata = {
   title:
@@ -51,9 +50,7 @@ export default async function PlaygroundEditor(props: PlaygroundEditorProps) {
 
   return (
     <ThemeLayout>
-      <ClientOnly>
-        <PlaygroundEditorBody preloadDatabase={templateFile} />
-      </ClientOnly>
+      <PlaygroundEditorDynamic preloadDatabase={templateFile} />
     </ThemeLayout>
   );
 }

@@ -17,6 +17,7 @@ import { deleteLocalBaseDialog } from "./dialog-base-delete";
 import { createLocalBoardDialog } from "./dialog-board-create";
 import { deleteLocalBoardDialog } from "./dialog-board-delete";
 import { useLocalConnectionList, useLocalDashboardList } from "./hooks";
+import WorkspaceSection from "./workspace-section";
 
 export default function LocalConnectionPage() {
   const router = useRouter();
@@ -87,7 +88,12 @@ export default function LocalConnectionPage() {
 
   return (
     <NavigationLayout>
-      <div className="flex flex-1 flex-col content-start gap-4 overflow-x-hidden overflow-y-auto p-4">
+      <div className="flex flex-1 flex-col content-start gap-6 overflow-x-hidden overflow-y-auto p-4">
+        {/* ── Local-First OPFS Workspaces ── */}
+        <WorkspaceSection />
+
+        <hr className="border-gray-200 dark:border-gray-700" />
+
         <div className="mb-4 flex gap-4">
           <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>

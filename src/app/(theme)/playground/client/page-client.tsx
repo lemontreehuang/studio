@@ -8,17 +8,22 @@ import {
 import ScreenDropZone from "@/components/screen-dropzone";
 import { StudioExtensionManager } from "@/core/extension-manager";
 import { createSQLiteExtensions } from "@/core/standard-extension";
-import WaSqliteDriver from "@/drivers/database/wasqlite";
+import WorkerSqliteDriver from "@/drivers/database/worker-wasqlite";
+import { WorkerResponse } from "@/drivers/database/worker-protocol";
+import { useRef } from "react";
 import { localDb } from "@/indexdb";
 import { useAvailableAIAgents } from "@/lib/ai-agent-storage";
 import downloadFileFromUrl from "@/lib/download-file";
 import { saveAs } from "file-saver";
 import {
+  Database,
   FolderOpenIcon,
   LucideFile,
   LucideLoader,
   RefreshCcw,
   Save,
+  Download,
+  UploadCloud,
   Pin,
   PinOff,
   CheckCircle2,
@@ -27,15 +32,17 @@ import {
 import { useSearchParams } from "next/navigation";
 import { generateId } from "@/lib/generate-id";
 import { createLocalConnection, removeLocalConnection } from "@/app/(outerbase)/local/hooks";
-import Script from "next/script";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import * as SQLite from "wa-sqlite";
-import SQLiteESMFactory from "wa-sqlite/dist/wa-sqlite.mjs";
-import { MemoryVFS } from "wa-sqlite/src/examples/MemoryVFS.js";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import {
+  getWorkspace,
+  touchWorkspace,
+  readFromOPFS,
+  writeToOPFS,
+} from "@/lib/workspace-storage";
 
 function useWebLock(lockName: string | undefined) {
   const [lockError, setLockError] = useState(false);
@@ -90,13 +97,20 @@ export default function PlaygroundEditorBody({
 }: {
   preloadDatabase?: string | null;
 }) {
-  const [sqlite3, setSqlite3] = useState<SQLiteAPI>();
-  const [vfs, setVfs] = useState<MemoryVFS>();
-  const [autoSaveEnabled, setAutoSaveEnabled] = useState(false);
+  const workerRef = useRef<Worker | null>(null);
+  const resolvesRef = useRef<Map<string, (res: WorkerResponse) => void>>(new Map());
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
   const [isPinned, setIsPinned] = useState(false);
   const [connectionId, setConnectionId] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const { t } = useTranslation();
+
+  // ── Workspace mode ──────────────────────────────────────
+  // When ?id= is present, we are in Local-First workspace mode.
+  // The database lives permanently in OPFS; no file handle needed.
+  const workspaceId = searchParams.get("id");
+  const [workspaceName, setWorkspaceName] = useState<string | null>(null);
+  const [workspaceFileHandle, setWorkspaceFileHandle] = useState<FileSystemFileHandle | undefined>();
 
   const pinToDashboard = useCallback(async (fileHandler: FileSystemFileHandle) => {
     try {
@@ -134,10 +148,10 @@ export default function PlaygroundEditorBody({
       toast.error(t("playground.unpinFailed", "取消固定失败"));
     }
   }, [connectionId, searchParams, t]);
-  const [databaseLoading, setDatabaseLoading] = useState(!!preloadDatabase);
+  const [databaseLoading, setDatabaseLoading] = useState(true);
 
-  const [nativeDriver, setNativeDriver] = useState<number>();
-  const [driver, setDriver] = useState<WaSqliteDriver>();
+  const [workerReady, setWorkerReady] = useState(false);
+  const [driver, setDriver] = useState<WorkerSqliteDriver>();
 
   const [handler, setHandler] = useState<FileSystemFileHandle>();
   const [fileName, setFilename] = useState("");
@@ -149,11 +163,12 @@ export default function PlaygroundEditorBody({
   const agentDriver = useAvailableAIAgents(driver);
 
   const lockName = useMemo(() => {
+    if (workspaceId) return `sqlite-workspace-${workspaceId}`;
     const s = searchParams.get("s");
     if (s) return `sqlite-session-${s}`;
     if (fileName) return `sqlite-file-${fileName}`;
     return undefined;
-  }, [searchParams, fileName]);
+  }, [workspaceId, searchParams, fileName]);
 
   const lockError = useWebLock(lockName);
 
@@ -169,51 +184,57 @@ export default function PlaygroundEditorBody({
   }, [driver, hasUnsavedChanges]);
 
   /**
-   * Initialize the wa-sqlite library.
+   * Initialize the Web Worker.
    */
-  const onReady = useCallback(() => {
-    SQLiteESMFactory({
-      locateFile: (file: string) => `/${file}`,
-    }).then((module) => {
-      const sqlite3 = SQLite.Factory(module);
-      const vfs = new MemoryVFS();
-      sqlite3.vfs_register(vfs as any, true);
-      setSqlite3(sqlite3);
-      setVfs(vfs);
+  useEffect(() => {
+    const worker = new Worker(new URL('@/workers/sqlite.worker.ts', import.meta.url));
+    worker.onmessage = (e: MessageEvent<WorkerResponse>) => {
+      const { msgId } = e.data;
+      const resolve = resolvesRef.current.get(msgId);
+      if (resolve) {
+        resolvesRef.current.delete(msgId);
+        resolve(e.data);
+      }
+    };
+    workerRef.current = worker;
+    setWorkerReady(true);
+    return () => {
+      worker.terminate();
+    };
+  }, []);
+
+  const rpc = useCallback((req: any): Promise<WorkerResponse> => {
+    return new Promise((resolve) => {
+      if (!workerRef.current) return;
+      const msgId = generateId();
+      resolvesRef.current.set(msgId, resolve);
+      workerRef.current.postMessage({ ...req, msgId });
     });
   }, []);
 
-  // Make sure we initialize on mount
-  useEffect(() => {
-    onReady();
-  }, [onReady]);
-
-  /**
-   * Load the database from the buffer.
-   */
   const loadDatabaseFromBuffer = useCallback(
-    async (buffer: ArrayBuffer) => {
-      if (sqlite3 && vfs) {
-        if (nativeDriver) {
-          try {
-             await sqlite3.close(nativeDriver);
-          } catch(e) {}
-        }
-        
-        const dbName = "db";
-        vfs.mapNameToFile.set(dbName, {
-          name: dbName,
-          flags: SQLite.SQLITE_OPEN_CREATE | SQLite.SQLITE_OPEN_READWRITE,
-          size: buffer.byteLength,
-          data: buffer,
-        });
-        
-        const db = await sqlite3.open_v2(dbName);
-        setNativeDriver(db);
-        setDriver(new WaSqliteDriver(sqlite3, db));
+    async (buffer?: ArrayBuffer) => {
+      if (!workerReady) return;
+      setDatabaseLoading(true);
+
+      // Smart Auto-Save: automatically disable for files larger than 50MB
+      if (buffer && buffer.byteLength > 50 * 1024 * 1024) {
+        setAutoSaveEnabled(false);
+        toast.info(t("playground.autoSaveDisabled", "文件较大，已自动关闭自动保存以保证性能。请完成后手动保存。"));
+      } else {
+        setAutoSaveEnabled(true);
       }
+
+      const dbName = fileName || "db";
+      const res = await rpc({ type: "INIT_DB", dbName, buffer, useOPFS: true });
+      if (res.type === "INIT_DONE" && res.success) {
+        setDriver(new WorkerSqliteDriver(rpc));
+      } else {
+        toast.error("Failed to initialize database: " + ('error' in res ? res.error : "Unknown error"));
+      }
+      setDatabaseLoading(false);
     },
-    [sqlite3, vfs, nativeDriver]
+    [workerReady, rpc, fileName, t]
   );
 
   /**
@@ -272,22 +293,64 @@ export default function PlaygroundEditorBody({
   );
 
   /**
-   * Trying to initial the database from preloadDatabase or session id.
+   * Trying to initial the database from preloadDatabase, workspace id, or session id.
    * If no database source provided, we will create a new empty database.
    */
   useEffect(() => {
-    if (sqlite3 && vfs) {
-      if (preloadDatabase) {
+    if (workerReady) {
+      if (workspaceId) {
+        // ── Local-First Workspace Mode ──
+        // Read the SQLite database buffer from OPFS and pass it to the Worker's INIT_DB.
+        // This ensures the database is initialized with the correct imported/saved data.
+        setDatabaseLoading(true);
+        getWorkspace(workspaceId).then((ws) => {
+          if (!ws) {
+            toast.error(t("workspace.notFound", "找不到工作区，可能已被删除"));
+            setDatabaseLoading(false);
+            window.location.href = "/local";
+            return;
+          }
+          setWorkspaceName(ws.name);
+          setWorkspaceFileHandle(ws.fileHandle);
+
+          readFromOPFS(workspaceId)
+            .then((buffer) => {
+              rpc({ type: "INIT_DB", dbName: workspaceId, buffer, useOPFS: true }).then((res) => {
+                if (res.type === "INIT_DONE" && res.success) {
+                  setDriver(new WorkerSqliteDriver(rpc));
+                } else {
+                  toast.error("Failed to open workspace: " + ("error" in res ? res.error : "Unknown"));
+                }
+              }).finally(() => {
+                setDatabaseLoading(false);
+              });
+            })
+            .catch((err: any) => {
+              console.error(err);
+              toast.error("Failed to read workspace from OPFS: " + err.message);
+              setDatabaseLoading(false);
+            });
+        });
+      } else if (preloadDatabase) {
+        setDatabaseLoading(true);
         downloadFileFromUrl(preloadDatabase)
           .then(loadDatabaseFromBuffer)
           .finally(() => setDatabaseLoading(false));
       } else if (searchParams.get("s")) {
         const sessionId = searchParams.get("s");
-        if (!sessionId) return;
+        if (!sessionId) {
+          setDatabaseLoading(false);
+          return;
+        }
 
+        setDatabaseLoading(true);
         loadDatabaseFileHandlerFromSessionId(sessionId).then((result) => {
-          if (!result) return;
+          if (!result) {
+            setDatabaseLoading(false);
+            return;
+          }
           if (result.needsPermission) {
+            setDatabaseLoading(false);
             // Permission must be requested via user gesture — show a prompt button.
             setPendingPermissionHandler(result.handler);
           } else {
@@ -295,23 +358,28 @@ export default function PlaygroundEditorBody({
             setIsPinned(true);
             setConnectionId(sessionId);
           }
+        }).catch((err: any) => {
+          console.error(err);
+          setDatabaseLoading(false);
         });
       } else {
         // If no database is provided, we will create a new empty database.
+        // We pass an empty ArrayBuffer to ensure any previous OPFS persistent data is wiped
+        // so the user actually gets a blank database.
+        setDatabaseLoading(true);
         const dbName = "db";
-        vfs.mapNameToFile.set(dbName, {
-          name: dbName,
-          flags: SQLite.SQLITE_OPEN_CREATE | SQLite.SQLITE_OPEN_READWRITE,
-          size: 0,
-          data: new ArrayBuffer(0),
-        });
-        sqlite3.open_v2(dbName).then(db => {
-          setNativeDriver(db);
-          setDriver(new WaSqliteDriver(sqlite3, db));
+        rpc({ type: "INIT_DB", dbName, buffer: new ArrayBuffer(0), useOPFS: true }).then(res => {
+          if (res.type === "INIT_DONE" && res.success) {
+            setDriver(new WorkerSqliteDriver(rpc));
+          } else {
+            toast.error("Failed to initialize empty database");
+          }
+        }).finally(() => {
+          setDatabaseLoading(false);
         });
       }
     }
-  }, [sqlite3, vfs, preloadDatabase, searchParams, loadDatabaseFromBuffer]);
+  }, [workerReady, workspaceId, preloadDatabase, searchParams, loadDatabaseFromBuffer, rpc, t]);
 
   /**
    * Reload the database from the file handler.
@@ -320,7 +388,7 @@ export default function PlaygroundEditorBody({
     if (driver && driver.hasChanged()) {
       if (
         !confirm(
-        "您有未保存的更改。刷新将丢失所有修改。确定要刷新吗？"
+          t("playground.confirmRefreshUnsaved", "当前数据库有未保存的修改。如果继续刷新，这些修改将会被覆盖丢失。确定要继续刷新吗？")
         )
       ) {
         return;
@@ -402,11 +470,14 @@ export default function PlaygroundEditorBody({
    */
   const performSave = useCallback(
     async (silent = false) => {
-      if (nativeDriver === undefined || !vfs) return;
+      if (!driver) return;
       
-      const file = vfs.mapNameToFile.get("db");
-      if (!file) return;
-      const exportData = new Uint8Array(file.data, 0, file.size);
+      const res = await rpc({ type: "EXPORT" });
+      if (res.type !== "EXPORT_RESULT" || res.error) {
+        if (!silent) toast.error("Failed to export database");
+        return;
+      }
+      const exportData = new Uint8Array(res.buffer);
 
       if (handler) {
         try {
@@ -486,7 +557,7 @@ export default function PlaygroundEditorBody({
         );
       }
     },
-    [driver, fileName, handler, nativeDriver, vfs, t, pinToDashboard]
+    [driver, fileName, handler, rpc, t, pinToDashboard]
   );
 
   const onSaveClicked = useCallback(() => {
@@ -496,6 +567,97 @@ export default function PlaygroundEditorBody({
     }
     performSave(false);
   }, [performSave, driver, t]);
+
+  /**
+   * Export the workspace database to a new file (Save As).
+   * Works for both workspace mode and legacy file mode.
+   */
+  const performExportAs = useCallback(async () => {
+    if (!driver) return;
+    const res = await rpc({ type: "EXPORT" });
+    if (res.type !== "EXPORT_RESULT" || res.error) {
+      toast.error("导出失败");
+      return;
+    }
+    const exportData = new Uint8Array(res.buffer);
+    const suggestedName = workspaceName || fileName || "sqlite-dump.db";
+
+    if (window.showSaveFilePicker) {
+      try {
+        const newHandle = await window.showSaveFilePicker({
+          suggestedName,
+          types: [{ description: "SQLite Database", accept: { "application/x-sqlite3": [".sqlite", ".db"] } }],
+        });
+        const writable = await newHandle.createWritable();
+        await writable.write(exportData);
+        await writable.close();
+        toast.success(t("playground.savedSuccess", "导出成功：") + newHandle.name);
+      } catch (err: any) {
+        if (err?.name !== "AbortError") toast.error("导出失败");
+      }
+    } else {
+      saveAs(new Blob([exportData], { type: "application/x-sqlite3" }), suggestedName);
+    }
+  }, [driver, rpc, workspaceName, fileName, t]);
+
+  /**
+   * Save the workspace database back to standard OPFS workspace files.
+   */
+  const performWorkspaceSave = useCallback(
+    async (silent = false) => {
+      if (!driver || !workspaceId) return;
+
+      const res = await rpc({ type: "EXPORT" });
+      if (res.type !== "EXPORT_RESULT" || res.error) {
+        if (!silent) toast.error("Failed to export database");
+        return;
+      }
+      const exportData = res.buffer;
+
+      try {
+        await writeToOPFS(workspaceId, exportData);
+        if (!silent) {
+          toast.success(
+            <div>
+              {t("playground.savedSuccess", "保存成功：")} <strong>{workspaceName || workspaceId}</strong>
+            </div>
+          );
+        }
+        driver.resetChange();
+        setHasUnsavedChanges(false);
+        setLastSavedTime(new Date());
+      } catch (err: any) {
+        console.error(err);
+        if (!silent) toast.error("Failed to save workspace to OPFS: " + err.message);
+      }
+    },
+    [driver, workspaceId, workspaceName, rpc, t]
+  );
+
+  /**
+   * Sync workspace data back to the associated external file (藕断丝连).
+   * Only available when workspaceFileHandle is set.
+   */
+  const performSyncBack = useCallback(async () => {
+    if (!driver || !workspaceFileHandle) return;
+    const res = await rpc({ type: "EXPORT" });
+    if (res.type !== "EXPORT_RESULT" || res.error) {
+      toast.error("同步失败");
+      return;
+    }
+    try {
+      const writable = await workspaceFileHandle.createWritable();
+      await writable.write(new Uint8Array(res.buffer));
+      await writable.close();
+      driver.resetChange();
+      setHasUnsavedChanges(false);
+      setLastSavedTime(new Date());
+      toast.success(t("playground.savedSuccess", "已同步到外部文件：") + workspaceFileHandle.name);
+    } catch (err) {
+      console.error(err);
+      toast.error("同步到外部文件失败，可能权限已过期");
+    }
+  }, [driver, rpc, workspaceFileHandle, t]);
 
   useEffect(() => {
     if (!autoSaveEnabled || !handler || !driver) return;
@@ -508,6 +670,25 @@ export default function PlaygroundEditorBody({
 
     return () => clearInterval(timer);
   }, [autoSaveEnabled, handler, driver, performSave]);
+
+  // Auto-save workspace database to OPFS
+  useEffect(() => {
+    if (!workspaceId || !driver) return;
+
+    const timer = setInterval(() => {
+      if (driver.hasChanged()) {
+        performWorkspaceSave(true);
+      }
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, [workspaceId, driver, performWorkspaceSave]);
+
+  // Touch workspace lastModified whenever data changes (workspace mode)
+  useEffect(() => {
+    if (!workspaceId || !driver || !hasUnsavedChanges) return;
+    touchWorkspace(workspaceId).catch(() => {});
+  }, [workspaceId, driver, hasUnsavedChanges]);
 
   const extensions = useMemo(() => {
     return new StudioExtensionManager(createSQLiteExtensions());
@@ -680,7 +861,16 @@ export default function PlaygroundEditorBody({
       <div className="flex h-screen w-screen flex-col">
         <div className="border-b p-1">
           <Toolbar>
-            {fileName && (
+            {/* ── Workspace mode badge ── */}
+            {workspaceName && (
+              <div className="flex items-center gap-1 rounded bg-blue-100 dark:bg-blue-900/30 p-2 text-xs text-blue-800 dark:text-blue-300">
+                <Database className="h-3.5 w-3.5" />
+                <span><strong>{workspaceName}</strong></span>
+              </div>
+            )}
+
+            {/* ── Legacy file badge ── */}
+            {!workspaceName && fileName && (
               <div className="flex items-center gap-1 rounded bg-yellow-300 p-2 text-xs text-black">
                 <LucideFile className="h-4 w-4" />
                 <span>
@@ -691,34 +881,78 @@ export default function PlaygroundEditorBody({
 
             {driver && (
               <div className="flex items-center">
-                <ToolbarButton
-                  text={t("common.save")}
-                  onClick={onSaveClicked}
-                  disabled={!hasUnsavedChanges}
-                  icon={<Save className="h-4 w-4" />}
-                />
-                {!hasUnsavedChanges && lastSavedTime && (
-                  <span className="ml-2 flex items-center gap-1 text-xs text-neutral-500">
-                    <CheckCircle2 className="h-3 w-3 text-green-500" />
-                    {t("playground.lastSavedAt", "已于")} {lastSavedTime.toLocaleTimeString()} {t("playground.savedToLocal", "保存到本地")}
-                  </span>
-                )}
-                {hasUnsavedChanges && (
-                  <span className="ml-2 flex items-center gap-1 text-xs text-orange-500">
-                    <CircleDot className="h-3 w-3" />
-                    {t("playground.unsavedChanges", "有未保存的更改")}
-                  </span>
+                {/* In workspace mode: show Save option, Export + optional SyncBack */}
+                {workspaceId ? (
+                  <>
+                    <ToolbarButton
+                      text={t("common.save")}
+                      onClick={() => performWorkspaceSave(false)}
+                      disabled={!hasUnsavedChanges}
+                      icon={<Save className="h-4 w-4" />}
+                    />
+                    {!hasUnsavedChanges && lastSavedTime && (
+                      <span className="ml-2 flex items-center gap-1 text-xs text-neutral-500 mr-2">
+                        <CheckCircle2 className="h-3 w-3 text-green-500" />
+                        {t("playground.lastSavedAt", "已于")} {lastSavedTime.toLocaleTimeString()} {t("playground.savedToLocal", "保存到本地")}
+                      </span>
+                    )}
+                    {hasUnsavedChanges && (
+                      <span className="ml-2 flex items-center gap-1 text-xs text-orange-500 mr-2">
+                        <CircleDot className="h-3 w-3" />
+                        {t("playground.unsavedChanges", "有未保存的更改")}
+                      </span>
+                    )}
+                    <ToolbarSeparator />
+                    <ToolbarButton
+                      text={t("playground.exportAs", "导出另存为")}
+                      onClick={performExportAs}
+                      icon={<Download className="h-4 w-4" />}
+                    />
+                    {workspaceFileHandle && (
+                      <ToolbarButton
+                        text={t("playground.syncBack", "同步回外部文件")}
+                        onClick={performSyncBack}
+                        icon={<UploadCloud className="h-4 w-4" />}
+                      />
+                    )}
+                  </>
+                ) : (
+                  /* Legacy mode: Save button */
+                  <>
+                    <ToolbarButton
+                      text={t("common.save")}
+                      onClick={onSaveClicked}
+                      disabled={!hasUnsavedChanges}
+                      icon={<Save className="h-4 w-4" />}
+                    />
+                    {!hasUnsavedChanges && lastSavedTime && (
+                      <span className="ml-2 flex items-center gap-1 text-xs text-neutral-500">
+                        <CheckCircle2 className="h-3 w-3 text-green-500" />
+                        {t("playground.lastSavedAt", "已于")} {lastSavedTime.toLocaleTimeString()} {t("playground.savedToLocal", "保存到本地")}
+                      </span>
+                    )}
+                    {hasUnsavedChanges && (
+                      <span className="ml-2 flex items-center gap-1 text-xs text-orange-500">
+                        <CircleDot className="h-3 w-3" />
+                        {t("playground.unsavedChanges", "有未保存的更改")}
+                      </span>
+                    )}
+                  </>
                 )}
               </div>
             )}
 
-            <ToolbarButton
-              text={t("playground.open")}
-              onClick={onOpenClicked}
-              icon={<FolderOpenIcon className="h-4 w-4" />}
-            />
+            {/* ── Open button (only in legacy mode) ── */}
+            {!workspaceId && (
+              <ToolbarButton
+                text={t("playground.open")}
+                onClick={onOpenClicked}
+                icon={<FolderOpenIcon className="h-4 w-4" />}
+              />
+            )}
 
-            {handler && (
+            {/* ── Legacy: Pin + AutoSave + Refresh ── */}
+            {!workspaceId && handler && (
               <>
                 <ToolbarSeparator />
                 {isPinned ? (
@@ -735,10 +969,10 @@ export default function PlaygroundEditorBody({
                   />
                 )}
                 <div className="flex items-center space-x-2 px-2 text-sm text-gray-700 dark:text-gray-300">
-                  <Checkbox 
-                    id="auto-save" 
-                    checked={autoSaveEnabled} 
-                    onCheckedChange={(checked) => setAutoSaveEnabled(!!checked)} 
+                  <Checkbox
+                    id="auto-save"
+                    checked={autoSaveEnabled}
+                    onCheckedChange={(checked) => setAutoSaveEnabled(!!checked)}
                   />
                   <Label htmlFor="auto-save" className="cursor-pointer">
                     {t("playground.autoSave", "自动保存")}
